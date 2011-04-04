@@ -1,5 +1,14 @@
 <?php
 
+function gsb_drush_help($section) {
+  switch ($section) {
+    case 'meta:gsb:title':
+      return dt('Git Site Builder commands');
+    case 'meta:gsb:summary':
+      return dt('Build, develop, manage, and deploy an entire Drupal site using the GSB methodology.');
+  }
+}
+
 function gsb_drush_command() {
   $items = array();
 
