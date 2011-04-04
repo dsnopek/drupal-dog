@@ -1,6 +1,6 @@
 <?php
 
-function drush_gsb_drush_command() {
+function gsb_drush_command() {
   $items = array();
 
   $items['gsb-status'] = array(
