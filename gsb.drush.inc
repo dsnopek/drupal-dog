@@ -44,5 +44,9 @@ function gsb_drush_command() {
     'description' => 'Perform a thorough review on an entire GSB-managed Drupal site and report any problems.',
   );
 
+  $items['gsb-log'] = array(
+    'description' => 'Wrapper on `git log` that helps filter log output to exclude upstream and irrelevant commit activity.',
+  );
+
   return $items;
 }
