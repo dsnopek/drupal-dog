@@ -24,11 +24,15 @@ function gsb_drush_command() {
     'description' => 'Remove a GSB-managed project from the site. This removes the attached git repository and removes all references to it from GSB\'s metadata.',
   );
 
-  $items['gsb-create'] = array(
-    'description' => 'Set up a new GSB-managed Drupal site. Can be built from one of a variety of sources.',
+  $items['gsb-rollout'] = array(
+    'description' => 'Roll out a new GSB-managed Drupal instance either from an existing GSB repository or a raw GSB manifest.',
+    'arguments' => array(
+      'source' => 'A URI, resolving either to an already-built GSB Git repository, or a raw GSB manifest from which a new GSB repository should be manifest.',
+      'destination' => 'Path to the desired root of the instance. If unspecified, defaults to the `git-clone` behavior that inherits the local directory name from the remote URI; e.g., "git://...drupal.git" will be cloned into the relative path "drupal".',
+    ),
   );
 
-  $items['gsb-update'] = array(
+  $items['gsb-rollup'] = array(
     'description' => 'Update the GSB manifests & metadata, or init them if they have not yet been created.',
   );
 
