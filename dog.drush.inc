@@ -12,6 +12,19 @@ function dog_drush_help($section) {
 function dog_drush_command() {
   $items = array();
 
+  $items['dog-init'] = array(
+    'description' => 'Set up a new dog-managed Drupal instance.',
+    'arguments' => array(
+      'target-dir' => "The target directory where the instance should be initialized. Defaults to the upstream repository name if unspecified (same behavior as `git clone`).",
+    ),
+    'options' => array(
+      'upstream' => 'The Drupal core repository to use as the upstream variant of Drupal. If unspecified, defaults to vanilla core (git://git.drupal.org/project/drupal.git).',
+      'upstream-ref' => 'The upstream ref (branch or tag) to use as the starting point for the new dog instance. If unspecified, defaults to the most recent tag on the current major version of Drupal.',
+      'branch' => "The name of the local branch to create for collaboration. Defaults to 'master'.",
+      'collab-uri' => "The URI to use as the collab repository for this instance. If unspecified, the upstream URI is used.",
+    ),
+  );
+
   $items['dog-rollout'] = array(
     'description' => 'Roll out a new dog-managed Drupal instance either from an existing dog repository or a raw dog manifest.',
     'bootstrap' => DRUSH_BOOTSTRAP_DRUSH,
