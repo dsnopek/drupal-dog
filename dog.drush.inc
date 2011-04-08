@@ -3,7 +3,7 @@
 function dog_drush_help($section) {
   switch ($section) {
     case 'meta:dog:title':
-      return dt('Git Site Builder commands');
+      return dt('Drupal on Git (Dog) commands');
     case 'meta:dog:summary':
       return dt('Build, develop, manage, and deploy an entire Drupal site using the dog methodology.');
   }
