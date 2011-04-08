@@ -19,12 +19,15 @@ function dog_drush_command() {
     ),
     'options' => array(
       'upstream' => 'The Drupal core repository to use as the upstream variant of Drupal. Accepts either a full URI or drush dl style input (e.g. "drupal-7.x"). If unspecified, defaults to vanilla core (git://git.drupal.org/project/drupal.git).',
-      'branch' => "The name of the local branch to create for collaboration. Defaults to 'master'.",
-      'collab' => "The URI to use as the collab repository for this instance. If unspecified, the upstream URI is used.",
+      'upstream-ref' => 'If using a full git URI as the upstream, the branch or tag to start from.',
+      'branch' => 'The name of the local branch to create for collaboration. Defaults to "master".',
+      'collab' => 'The URI to use as the collab repository for this instance. If unspecified, the upstream URI is used.',
     ),
     'examples' => array(
       'drush dog-init --upstream=6.x --collab=git://github.com/me/my-project my_project' =>
         'Initialize a new Drupal 6.x project in a directory called "my_project" with the upstream from git.drupal.org and a collab repository on github.',
+      'drush dog-init --upstream=git@gitorious.org:pressflow/6.git --upstream-ref=master --collab=file:///var/git/our_pressflow_project my_pressflow_project' =>
+        'Initialize a new Pressflow project in "my_pressflow_project" from the master branch on a gitorious upstream, and a locally-hosted collab repository in /var/git.',
     ),
   );
 
