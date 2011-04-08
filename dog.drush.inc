@@ -22,6 +22,10 @@ function dog_drush_command() {
       'branch' => "The name of the local branch to create for collaboration. Defaults to 'master'.",
       'collab' => "The URI to use as the collab repository for this instance. If unspecified, the upstream URI is used.",
     ),
+    'examples' => array(
+      'drush dog-init --upstream=6.x --collab=git://github.com/me/my-project my_project' =>
+        'Initialize a new Drupal 6.x project in a directory called "my_project" with the upstream from git.drupal.org and a collab repository on github.',
+    ),
   );
 
   $items['dog-dl'] = array(
@@ -34,6 +38,13 @@ function dog_drush_command() {
     'options' => array(
       'collab' => 'A writeable Git remote repository URI to be registered for the "collab" remote.',
     ),
+    'examples' => array(
+      'drush dog-dl views-6.2.x' =>
+        'Initialize views 6.2 in the project repository in the default location',
+      'drush dog-dl https://github.com/kete/tiny_mce.git sites/all/libraries/tiny_mce' =>
+        'Initialize tiny_mce from github in sits/all/libraries',
+    ),
+
   );
   
   $items['dog-collab'] = array(
@@ -41,6 +52,10 @@ function dog_drush_command() {
     'arguments' => array(
       'collab-uri' => 'URI location for the collab remote git repository',
       'target-dir' => 'Path to the module or theme directory, or drupal root where the collab should be added. Defaults to current working directory.',
+    ),
+    'examples' => array(
+      'drush dog-collab git://github.com/me/my-views sites/all/modules/views' =>
+        'Add a collab repo from github to the views module',
     ),
   );
 
