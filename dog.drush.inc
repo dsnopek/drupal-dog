@@ -14,6 +14,7 @@ function dog_drush_command() {
 
   $items['dog-init'] = array(
     'description' => 'Set up a new dog-managed Drupal instance.',
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUSH,
     'arguments' => array(
       'target-dir' => "The target directory where the instance should be initialized. Defaults to the upstream repository name if unspecified (same behavior as `git clone`).",
     ),
@@ -23,7 +24,7 @@ function dog_drush_command() {
       'collab' => "The URI to use as the collab repository for this instance. If unspecified, the upstream URI is used.",
     ),
     'examples' => array(
-      'drush dog-init --upstream=6.x --collab=git://github.com/me/my-project my_project' =>
+      'drush dog-init --upstream=drupal-6.x --collab=git://github.com/me/my-project my_project' =>
         'Initialize a new Drupal 6.x project in a directory called "my_project" with the upstream from git.drupal.org and a collab repository on github.',
     ),
   );
