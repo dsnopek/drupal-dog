@@ -48,7 +48,11 @@ function dog_drush_command() {
       'drush dog-dl https://github.com/kete/tiny_mce.git sites/all/libraries/tiny_mce' =>
         'Initialize tiny_mce from github in sits/all/libraries',
     ),
+  );
 
+  $items['dog-vet'] = array(
+    'bootstrap' => DRUSH_BOOTSTRAP_MAX,
+    'description' => 'Inspect and report on the state of the current dog-managed Drupal instance, as it pertains to dog.',
   );
   
   $items['dog-collab'] = array(
@@ -82,12 +86,6 @@ function dog_drush_command() {
       'target-dir' => 'Path to the module or theme directory, or drupal root where the collab should be added. Defaults to current working directory',
     ),
     'aliases' => array('dogup'),
-  );
-  
-  $items['dog-status'] = array(
-    'bootstrap' => DRUSH_BOOTSTRAP_MAX,
-    'description' => 'Report on the state of the current dog-managed Drupal instance, as it pertains to dog.',
-    'aliases' => array('dogs', 'vet'),
   );
 
   $items['dog-remove'] = array(
