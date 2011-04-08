@@ -18,11 +18,65 @@ function dog_drush_command() {
       'target-dir' => "The target directory where the instance should be initialized. Defaults to the upstream repository name if unspecified (same behavior as `git clone`).",
     ),
     'options' => array(
-      'upstream' => 'The Drupal core repository to use as the upstream variant of Drupal. If unspecified, defaults to vanilla core (git://git.drupal.org/project/drupal.git).',
-      'upstream-ref' => 'The upstream ref (branch or tag) to use as the starting point for the new dog instance. If unspecified, defaults to the most recent tag on the current major version of Drupal.',
+      'upstream' => 'The Drupal core repository to use as the upstream variant of Drupal. Accepts either a full URI or drush dl style input (e.g. "drupal-7.x"). If unspecified, defaults to vanilla core (git://git.drupal.org/project/drupal.git).',
       'branch' => "The name of the local branch to create for collaboration. Defaults to 'master'.",
-      'collab-uri' => "The URI to use as the collab repository for this instance. If unspecified, the upstream URI is used.",
+      'collab' => "The URI to use as the collab repository for this instance. If unspecified, the upstream URI is used.",
     ),
+  );
+
+  $items['dog-dl'] = array(
+    'description' => 'Download contributed projects from Drupal.org via git cloning and register them into the dog system. This is essentially a wrapper on `drush dl` without the "--version-control*" and "--package-handler*" arguments, as those considerations are handled by dog.',
+    'bootstrap' => DRUSH_BOOTSTRAP_MAX,
+    'arguments' => array(
+      'project' => 'The contrib project from drupal in drush dl style (e.g "views-6.2.x"). Also accepts a full git URI for using non-drupal-hosted projects.',
+      'target-dir' => 'The target directory where the contrib should be initialized. Defaults to sites/all/<contrib-type>/.',
+    ),
+    'options' => array(
+      'collab' => 'A writeable Git remote repository URI to be registered for the "collab" remote.',
+    ),
+  );
+  
+  $items['dog-collab'] = array(
+    'description' => 'Changes the collab remote to a module, theme or main repository. Useful if one was not set up initially or flexibility is required.',
+    'arguments' => array(
+      'collab-uri' => 'URI location for the collab remote git repository',
+      'target-dir' => 'Path to the module or theme directory, or drupal root where the collab should be added. Defaults to current working directory.',
+    ),
+  );
+
+  $items['dog-catchup'] = array(
+    'description' => 'Update an existing dog-managed Drupal site to the latest state recorded in the main collab repository.',
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_ROOT,
+    'arguments' => array(
+      'repositories' => 'A space-delimited list of repositories attached to the dog instance that should be synced. If none specified, all repositories are synced.',
+    ),
+    'options' => array(
+      'wc-strategy' => 'Defines the behavior to use when working copy changes are encountered during sync. Acceptable values: stash (stash any changes found in the working copy), stash-reapply (stash, update, `git stash apply`), stash-pop (stash, update, `git stash pop`), discard (`git reset --hard HEAD`), skip (omit the repo from sync). Defaults to stash-pop.',
+    ),
+    'aliases' => array('dogre'),
+  );
+  
+  $items['dog-upstream-update'] = array(
+    'description' => 'Pull updates from upstream and commit them to the collab remote if one exists.',
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_ROOT,
+    'arguments' => array(
+      'target-dir' => 'Path to the module or theme directory, or drupal root where the collab should be added. Defaults to current working directory',
+    ),
+    'aliases' => array('dogup'),
+  );
+  
+  $items['dog-status'] = array(
+    'bootstrap' => DRUSH_BOOTSTRAP_MAX,
+    'description' => 'Report on the state of the current dog-managed Drupal instance, as it pertains to dog.',
+    'aliases' => array('dogs', 'vet'),
+  );
+
+  $items['dog-remove'] = array(
+    'description' => 'Remove a dog-managed extension from the site. This removes the attached git repository and removes all references to it from dog\'s metadata.',
+    'arguments' => array(
+      'target-dir' => 'Path to the module or theme directory, or drupal root where the collab should be added.',
+    ),
+    'aliases' => array('doggone'),
   );
 
   $items['dog-rollout'] = array(
@@ -35,12 +89,6 @@ function dog_drush_command() {
     'aliases' => array('dogro'),
   );
 
-  $items['dog-status'] = array(
-    'bootstrap' => DRUSH_BOOTSTRAP_MAX,
-    'description' => 'Report on the state of the current dog-managed Drupal instance, as it pertains to dog.',
-    'aliases' => array('dogs'),
-  );
-
   $items['dog-rollup'] = array(
     'description' => 'Update the dog manifests & metadata, or init them if they have not yet been created.',
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_ROOT,
@@ -50,32 +98,8 @@ function dog_drush_command() {
     'aliases' => array('dogru'),
   );
 
-  $items['dog-resync'] = array(
-    'description' => 'Update an existing dog-managed Drupal site to the latest state recorded in the main collab repository. Any changes to the ',
-    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_ROOT,
-    'arguments' => array(
-      'repositories' => 'A space-delimited list of repositories attached to the dog instance that should be synced. If none specified, all repositories are synced.',
-    ),
-    'options' => array(
-      'wc-strategy' => 'Defines the behavior to use when working copy changes are encountered during sync. Acceptable values: stash (stash any changes found in the working copy), stash-reapply (stash, update, `git stash apply`), stash-pop (stash, update, `git stash pop`), discard (`git reset --hard HEAD`), skip (omit the repo from sync). Defaults to stash-pop.',
-    ),
-    'aliases' => array('dogre'),
-  );
-
   $items['dog-revert'] = array(
     'description' => 'Roll back a dog resync operation.',
-  );
-
-  $items['dog-dl'] = array(
-    'description' => 'Download contributed projects from Drupal.org via git cloning and register them into the dog system. This is essentially a wrapper on `drush dl` without the "--version-control*" and "--package-handler*" arguments, as those considerations are handled by dog.',
-    'bootstrap' => DRUSH_BOOTSTRAP_MAX,
-    'options' => array(
-      'collab-uri' => 'A writeable Git remote repository URI to be registered for the "collab" remote.',
-    ),
-  );
-
-  $items['dog-remove-extension'] = array(
-    'description' => 'Remove a dog-managed extension from the site. This removes the attached git repository and removes all references to it from dog\'s metadata.',
   );
 
   $items['dog-log'] = array(
