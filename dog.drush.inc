@@ -54,7 +54,7 @@ function dog_drush_command() {
     'bootstrap' => DRUSH_BOOTSTRAP_MAX,
     'description' => 'Inspect and report on the state of the current dog-managed Drupal instance, as it pertains to dog.',
   );
-  
+
   $items['dog-collab'] = array(
     'description' => 'Changes the collab remote to a module, theme or main repository. Useful if one was not set up initially or flexibility is required.',
     'arguments' => array(
@@ -78,7 +78,7 @@ function dog_drush_command() {
     ),
     'aliases' => array('dogre'),
   );
-  
+
   $items['dog-upstream-update'] = array(
     'description' => 'Pull updates from upstream and commit them to the collab remote if one exists.',
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_ROOT,
@@ -124,4 +124,139 @@ function dog_drush_command() {
   );
 
   return $items;
+}
+
+function _dog_git_invoke($command, $fail_safe = FALSE, $repository_path = NULL, $cwd = NULL, $env = NULL) {
+  if (!isset($env)) {
+    $env = $_ENV;
+  }
+  if ($repository_path) {
+    $env['GIT_DIR'] = $repository_path;
+  }
+
+  $descriptor_spec = array(
+    1 => array('pipe', 'w'),
+    2 => array('pipe', 'w'),
+  );
+
+  $process = proc_open($command, $descriptor_spec, $pipes, $cwd, $env);
+  if (is_resource($process)) {
+    $stdout = stream_get_contents($pipes[1]);
+    fclose($pipes[1]);
+    $stderr = stream_get_contents($pipes[2]);
+    fclose($pipes[2]);
+
+    $return_code = proc_close($process);
+
+    if ($return_code != 0 && !$fail_safe) {
+      throw new Exception("Invocation of '" . $command . "' failed with return code " . $return_code .": \n" . $stdout . $stderr);
+    }
+
+    return $stdout;
+  }
+}
+
+function good_dog() {
+  drush_log('Good dog!', 'notice');
+  return TRUE;
+}
+
+function bad_dog() {
+  drush_log('Bad dog!', 'notice');
+  return FALSE;
+}
+
+function drush_dog_init($target = '') {
+  $upstream = drush_get_option('upstream', 'drupal');
+
+  if (strpos($upstream, 'drupal') === 0) {
+    $version = pm_parse_project_version(array($upstream));
+    $version = reset($version);
+    $xml = _drush_pm_get_release_history_xml($version);
+    $release = pm_parse_release($version, $xml);
+    $upstream_ref = $release['tag'];
+    $upstream = 'git://git.drupal.org/project/drupal.git';
+  }
+  else {
+    $upstream_ref = drush-get_option('upstream-ref');
+    if (empty($upstream_ref)) {
+      drush_log('An upstream ref must be specified as the starting point for the dog instance.', 'error');
+      return bad_dog();
+    }
+  }
+
+  $target = empty($target) ? preg_replace('/.*\/([\w]*)(\.git)?$/', '\1', $upstream) : $target;
+
+  // Normalize target to absolute path
+  if ($target[0] != '/') {
+    $realtarget = getcwd() . '/' . $target;
+  }
+
+  if (file_exists($realtarget)) {
+    drush_log("Target directory '$realtarget' already exists.", 'error');
+    return bad_dog();
+  }
+
+  try {
+    $remoteinfo = _dog_git_invoke('git ls-remote ' . escapeshellarg($upstream) . ' 7.0');
+  }
+  catch (Exception $e) {
+    drush_log("Upstream URI '$upstream' is not a Git repository.", 'error', $e->__toString());
+    return bad_dog();
+  }
+
+  // Check that the 7.0 tag is the SHA1 we know it should be.
+  if (strpos($remoteinfo, '497914920385b7016ac9c9367e0198530787adf2') !== 0) {
+    drush_log("Upstream URI '$upstream' is not a valid Drupal core repository.", 'error');
+    return bad_dog();
+  }
+
+  // Build the base clone command.
+  $cmd = 'git clone -q -o upstream --no-hardlinks ';
+
+  // Use a refcache if drush has one specified
+  if ($refcache = drush_get_option('git_reference_cache')) {
+    $cmd .= "--reference $refcache ";
+  }
+
+  // add the clone uri and target dir
+  $cmd .= escapeshellarg($upstream);
+
+  // add the target output dir
+  if (!empty($target)) {
+    $cmd .= ' ' . escapeshellarg($target);
+  }
+
+  drush_log("Cloning '$upstream' into $realtarget.", 'info');
+
+  try {
+    // Do the clone
+    _dog_git_invoke($cmd);
+  }
+  catch (Exception $e) {
+    drush_log("Clone of upstream repository failed.", 'error');
+    return bad_dog();
+  }
+
+  drush_log("Successfully initialized a new dog instance in $realtarget.", 'success');
+
+  // Create the appropriate local branch based on the requested start point
+  $localbranch = drush_get_option('branch', 'master');
+
+  $old = trim(_dog_git_invoke('git symbolic-ref HEAD | cut -c 12-', FALSE, $realtarget . '/.git'));
+//
+//  _dog_git_invoke('git checkout -b ' . escapeshellarg($localbranch) . ' ' . escapeshellarg($upstream_ref), FALSE, $realtarget . '/.git');
+//  _dog_git_invoke('git branch -D ' . $old, FALSE, $realtarget . '/.git');
+
+  // FIXME handle old & new branch collision
+  _dog_git_invoke("git config branch.$old.remote collab", FALSE, $realtarget . '/.git');
+  _dog_git_invoke('git branch -M ' . escapeshellarg($localbranch), FALSE, $realtarget . '/.git');
+
+  _dog_git_invoke('git reset --hard ' . escapeshellarg($upstream_ref), FALSE, $realtarget . '/.git');
+
+  // Set the collab uri
+  $collab = drush_get_option('collab', $upstream);
+  _dog_git_invoke('git remote add collab ' . escapeshellarg($collab), FALSE, $realtarget . '/.git');
+
+  return good_dog();
 }
