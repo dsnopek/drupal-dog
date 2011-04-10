@@ -54,7 +54,7 @@ function dog_drush_command() {
     'bootstrap' => DRUSH_BOOTSTRAP_MAX,
     'description' => 'Inspect and report on the state of the current dog-managed Drupal instance, as it pertains to dog.',
   );
-
+  
   $items['dog-collab'] = array(
     'description' => 'Changes the collab remote to a module, theme or main repository. Useful if one was not set up initially or flexibility is required.',
     'arguments' => array(
@@ -78,7 +78,7 @@ function dog_drush_command() {
     ),
     'aliases' => array('dogre'),
   );
-
+  
   $items['dog-upstream-update'] = array(
     'description' => 'Pull updates from upstream and commit them to the collab remote if one exists.',
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_ROOT,
@@ -244,15 +244,9 @@ function drush_dog_init($target = '') {
   $localbranch = drush_get_option('branch', 'master');
 
   $old = trim(_dog_git_invoke('git symbolic-ref HEAD | cut -c 12-', FALSE, $realtarget . '/.git'));
-//
-//  _dog_git_invoke('git checkout -b ' . escapeshellarg($localbranch) . ' ' . escapeshellarg($upstream_ref), FALSE, $realtarget . '/.git');
-//  _dog_git_invoke('git branch -D ' . $old, FALSE, $realtarget . '/.git');
 
-  // FIXME handle old & new branch collision
-  _dog_git_invoke("git config branch.$old.remote collab", FALSE, $realtarget . '/.git');
-  _dog_git_invoke('git branch -M ' . escapeshellarg($localbranch), FALSE, $realtarget . '/.git');
-
-  _dog_git_invoke('git reset --hard ' . escapeshellarg($upstream_ref), FALSE, $realtarget . '/.git');
+  _dog_git_invoke('git checkout -b ' . escapeshellarg($localbranch) . ' ' . escapeshellarg($upstream_ref), FALSE, $realtarget . '/.git', $realtarget);
+  _dog_git_invoke('git branch -D ' . $old, FALSE, $realtarget . '/.git', $realtarget);
 
   // Set the collab uri
   $collab = drush_get_option('collab', $upstream);
