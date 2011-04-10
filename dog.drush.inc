@@ -178,8 +178,8 @@ function drush_dog_init($target = '') {
     $upstream = 'git://git.drupal.org/project/drupal.git';
   }
   else {
-    $upstream_ref = drush-get_option('upstream-ref');
-    if (empty($upstream_ref)) {
+    $upstream_ref = drush_get_option('upstream-ref');
+    if (!is_string($upstream_ref)) {
       drush_log('An upstream ref must be specified as the starting point for the dog instance.', 'error');
       return bad_dog();
     }
