@@ -128,7 +128,7 @@ function dog_drush_command() {
 
 function _dog_git_invoke($command, $fail_safe = FALSE, $repository_path = NULL, $cwd = NULL, $env = NULL) {
   if (!isset($env)) {
-    $env = $_ENV;
+    $env = $_SERVER;
   }
   if ($repository_path) {
     $env['GIT_DIR'] = $repository_path;
