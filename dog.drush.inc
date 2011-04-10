@@ -252,5 +252,16 @@ function drush_dog_init($target = '') {
   $collab = drush_get_option('collab', $upstream);
   _dog_git_invoke('git remote add collab ' . escapeshellarg($collab), FALSE, $realtarget . '/.git');
 
+  if (!file_exists($realtarget . '/sites/default/files')) {
+    mkdir($realtarget . '/sites/default/files');
+  }
+
+  $gitignore = new SplFileObject($realtarget . '/sites/default/files/.gitignore', 'w');
+  $gitignore->fwrite("*\n!.gitignore\n");
+
+  // -o -- <filespec> doesn't work on untracked files; have to add it first
+  _dog_git_invoke('git add -- sites/default/files/.gitignore', FALSE, $realtarget . '/.git', $realtarget);
+  _dog_git_invoke('git commit -m "Add sites/default/files with a .gitignore file" -o -- ' . $realtarget . '/sites/default/files/.gitignore', FALSE, $realtarget . '/.git', $realtarget);
+
   return good_dog();
 }
