@@ -126,7 +126,7 @@ function dog_drush_command() {
   return $items;
 }
 
-function _dog_git_invoke($command, $fail_safe = FALSE, $repository_path = NULL, $cwd = NULL, $env = NULL) {
+function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_safe = FALSE, $env = NULL) {
   if (!isset($env)) {
     $env = $_SERVER;
   }
@@ -243,15 +243,16 @@ function drush_dog_init($target = '') {
   // Create the appropriate local branch based on the requested start point
   $localbranch = drush_get_option('branch', 'master');
 
-  $old = trim(_dog_git_invoke('git symbolic-ref HEAD | cut -c 12-', FALSE, $realtarget . '/.git'));
+  $old = trim(_dog_git_invoke('git symbolic-ref HEAD | cut -c 12-', $realtarget));
 
-  _dog_git_invoke('git checkout -b ' . escapeshellarg($localbranch) . ' ' . escapeshellarg($upstream_ref), FALSE, $realtarget . '/.git', $realtarget);
-  _dog_git_invoke('git branch -D ' . $old, FALSE, $realtarget . '/.git', $realtarget);
+  _dog_git_invoke('git checkout -b ' . escapeshellarg($localbranch) . ' ' . escapeshellarg($upstream_ref), $realtarget);
+  _dog_git_invoke('git branch -D ' . $old, $realtarget);
 
   // Set the collab uri
   $collab = drush_get_option('collab', $upstream);
-  _dog_git_invoke('git remote add collab ' . escapeshellarg($collab), FALSE, $realtarget . '/.git');
+  _dog_git_invoke('git remote add collab ' . escapeshellarg($collab), $realtarget);
 
+  // Init the files dir
   if (!file_exists($realtarget . '/sites/default/files')) {
     mkdir($realtarget . '/sites/default/files');
   }
@@ -260,8 +261,8 @@ function drush_dog_init($target = '') {
   $gitignore->fwrite("*\n!.gitignore\n");
 
   // -o -- <filespec> doesn't work on untracked files; have to add it first
-  _dog_git_invoke('git add -- sites/default/files/.gitignore', FALSE, $realtarget . '/.git', $realtarget);
-  _dog_git_invoke('git commit -m "Add sites/default/files with a .gitignore file" -o -- ' . $realtarget . '/sites/default/files/.gitignore', FALSE, $realtarget . '/.git', $realtarget);
+  _dog_git_invoke('git add -- sites/default/files/.gitignore', $realtarget);
+  _dog_git_invoke('git commit -m "Add sites/default/files with a .gitignore file" -o -- ' . $realtarget . '/sites/default/files/.gitignore', $realtarget);
 
   return good_dog();
 }
