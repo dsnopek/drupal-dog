@@ -278,8 +278,8 @@ function drush_dog_init($target = '') {
   $gitignore->fwrite("*\n!.gitignore\n");
 
   // -o -- <filespec> doesn't work on untracked files; have to add it first
-  _dog_git_invoke('git add -- sites/default/files/.gitignore', $realtarget);
-  _dog_git_invoke('git commit -m "Add sites/default/files with a .gitignore file" -o -- ' . $realtarget . '/sites/default/files/.gitignore', $realtarget);
+  _dog_git_invoke('git add -f -- sites/default/files/.gitignore', $realtarget);
+  _dog_git_invoke('git commit -m "Add sites/default/files with a .gitignore file" -o -- sites/default/files/.gitignore', $realtarget);
 
   return good_dog();
 }
