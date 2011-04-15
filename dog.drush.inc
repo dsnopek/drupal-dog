@@ -252,6 +252,23 @@ function drush_dog_init($target = '') {
   $collab = drush_get_option('collab', $upstream);
   _dog_git_invoke('git remote add collab ' . escapeshellarg($collab), $realtarget);
 
+  // Init the .dog dir & sled
+  mkdir($realtarget . '/.dog');
+
+  // For now at least, we just manually write a sledfile.
+  $sledfile = new SplFileObject("$realtarget/.dog/sled", 'w+');
+
+  $data = array(
+    'mainRepo' => array(
+      'upstream' => $upstream,
+      'collab' => $collab,
+    ),
+  );
+
+  $sledfile->fwrite(json_encode($data, JSON_FORCE_OBJECT));
+  _dog_git_invoke('git add -f -- .dog/sled', $realtarget);
+  _dog_git_invoke('git commit -m "Add dog sled manifest file." -o -- .dog/sled', $realtarget);
+
   // Init the files dir
   if (!file_exists($realtarget . '/sites/default/files')) {
     mkdir($realtarget . '/sites/default/files');
