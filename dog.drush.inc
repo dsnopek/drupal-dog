@@ -54,7 +54,7 @@ function dog_drush_command() {
     'bootstrap' => DRUSH_BOOTSTRAP_MAX,
     'description' => 'Inspect and report on the state of the current dog-managed Drupal instance, as it pertains to dog.',
   );
-  
+
   $items['dog-collab'] = array(
     'description' => 'Changes the collab remote to a module, theme or main repository. Useful if one was not set up initially or flexibility is required.',
     'arguments' => array(
@@ -78,7 +78,7 @@ function dog_drush_command() {
     ),
     'aliases' => array('dogre'),
   );
-  
+
   $items['dog-upstream-update'] = array(
     'description' => 'Pull updates from upstream and commit them to the collab remote if one exists.',
     'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_ROOT,
@@ -127,6 +127,13 @@ function dog_drush_command() {
 }
 
 function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_safe = FALSE, $env = NULL) {
+  static $git_path;
+
+  // Quick local static
+  if (!isset($git_path)) {
+    $git_path = drush_get_option('git_path', 'git');
+  }
+
   if (!isset($env)) {
     $env = $_SERVER;
   }
@@ -139,7 +146,7 @@ function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_s
     2 => array('pipe', 'w'),
   );
 
-  $process = proc_open($command, $descriptor_spec, $pipes, $cwd, $env);
+  $process = proc_open("$git_path $command", $descriptor_spec, $pipes, $cwd, $env);
   if (is_resource($process)) {
     $stdout = stream_get_contents($pipes[1]);
     fclose($pipes[1]);
@@ -198,7 +205,7 @@ function drush_dog_init($target = '') {
   }
 
   try {
-    $remoteinfo = _dog_git_invoke('git ls-remote ' . escapeshellarg($upstream) . ' 7.0');
+    $remoteinfo = _dog_git_invoke('ls-remote ' . escapeshellarg($upstream) . ' 7.0');
   }
   catch (Exception $e) {
     drush_log("Upstream URI '$upstream' is not a Git repository.", 'error', $e->__toString());
@@ -212,7 +219,7 @@ function drush_dog_init($target = '') {
   }
 
   // Build the base clone command.
-  $cmd = 'git clone -q -o upstream --no-hardlinks ';
+  $cmd = 'clone -q -o upstream --no-hardlinks ';
 
   // Use a refcache if drush has one specified
   if ($refcache = drush_get_option('git_reference_cache')) {
@@ -243,14 +250,14 @@ function drush_dog_init($target = '') {
   // Create the appropriate local branch based on the requested start point
   $localbranch = drush_get_option('branch', 'master');
 
-  $old = trim(_dog_git_invoke('git symbolic-ref HEAD | cut -c 12-', $realtarget));
+  $old = trim(_dog_git_invoke('symbolic-ref HEAD | cut -c 12-', $realtarget));
 
-  _dog_git_invoke('git checkout -b ' . escapeshellarg($localbranch) . ' ' . escapeshellarg($upstream_ref), $realtarget);
-  _dog_git_invoke('git branch -D ' . $old, $realtarget);
+  _dog_git_invoke('checkout -b ' . escapeshellarg($localbranch) . ' ' . escapeshellarg($upstream_ref), $realtarget);
+  _dog_git_invoke('branch -D ' . $old, $realtarget);
 
   // Set the collab uri
   $collab = drush_get_option('collab', $upstream);
-  _dog_git_invoke('git remote add collab ' . escapeshellarg($collab), $realtarget);
+  _dog_git_invoke('remote add collab ' . escapeshellarg($collab), $realtarget);
 
   // Init the .dog dir & sled
   mkdir($realtarget . '/.dog');
@@ -266,8 +273,8 @@ function drush_dog_init($target = '') {
   );
 
   $sledfile->fwrite(json_encode($data, JSON_FORCE_OBJECT));
-  _dog_git_invoke('git add -f -- .dog/sled', $realtarget);
-  _dog_git_invoke('git commit -m "Add dog sled manifest file." -o -- .dog/sled', $realtarget);
+  _dog_git_invoke('add -f -- .dog/sled', $realtarget);
+  _dog_git_invoke('commit -m "Add dog sled manifest file." -o -- .dog/sled', $realtarget);
 
   // Init the files dir
   if (!file_exists($realtarget . '/sites/default/files')) {
@@ -278,8 +285,8 @@ function drush_dog_init($target = '') {
   $gitignore->fwrite("*\n!.gitignore\n");
 
   // -o -- <filespec> doesn't work on untracked files; have to add it first
-  _dog_git_invoke('git add -f -- sites/default/files/.gitignore', $realtarget);
-  _dog_git_invoke('git commit -m "Add sites/default/files with a .gitignore file" -o -- sites/default/files/.gitignore', $realtarget);
+  _dog_git_invoke('add -f -- sites/default/files/.gitignore', $realtarget);
+  _dog_git_invoke('commit -m "Add sites/default/files with a .gitignore file" -o -- sites/default/files/.gitignore', $realtarget);
 
   return good_dog();
 }
