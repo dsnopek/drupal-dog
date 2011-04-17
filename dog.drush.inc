@@ -195,9 +195,7 @@ function drush_dog_init($target = '') {
   $target = empty($target) ? preg_replace('/.*\/([\w]*)(\.git)?$/', '\1', $upstream) : $target;
 
   // Normalize target to absolute path
-  if ($target[0] != '/') {
-    $realtarget = getcwd() . '/' . $target;
-  }
+  $realtarget = $target[0] != '/' ? getcwd() . '/' . $target : $target;
 
   if (file_exists($realtarget)) {
     drush_log(dt("Target directory '$realtarget' already exists."), 'error');
