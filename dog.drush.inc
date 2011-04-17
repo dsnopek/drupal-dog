@@ -270,7 +270,7 @@ function drush_dog_init($target = '') {
     ),
   );
 
-  $sledfile->fwrite(json_encode($data, JSON_FORCE_OBJECT));
+  $sledfile->fwrite(json_encode($data));
   _dog_git_invoke('add -f -- .dog/sled', $realtarget);
   _dog_git_invoke('commit -m "Add dog sled manifest file." -o -- .dog/sled', $realtarget);
 
