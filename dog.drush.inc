@@ -164,12 +164,12 @@ function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_s
 }
 
 function good_dog() {
-  drush_log('Good dog!', 'notice');
+  drush_log(dt('Good dog!'), 'notice');
   return TRUE;
 }
 
 function bad_dog() {
-  drush_log('Bad dog!', 'notice');
+  drush_log(dt('Bad dog!'), 'notice');
   return FALSE;
 }
 
@@ -187,7 +187,7 @@ function drush_dog_init($target = '') {
   else {
     $upstream_ref = drush_get_option('upstream-ref');
     if (!is_string($upstream_ref)) {
-      drush_log('An upstream ref must be specified as the starting point for the dog instance.', 'error');
+      drush_log(dt('An upstream ref must be specified as the starting point for the dog instance.'), 'error');
       return bad_dog();
     }
   }
@@ -200,7 +200,7 @@ function drush_dog_init($target = '') {
   }
 
   if (file_exists($realtarget)) {
-    drush_log("Target directory '$realtarget' already exists.", 'error');
+    drush_log(dt("Target directory '$realtarget' already exists."), 'error');
     return bad_dog();
   }
 
@@ -208,13 +208,13 @@ function drush_dog_init($target = '') {
     $remoteinfo = _dog_git_invoke('ls-remote ' . escapeshellarg($upstream) . ' 7.0');
   }
   catch (Exception $e) {
-    drush_log("Upstream URI '$upstream' is not a Git repository.", 'error', $e->__toString());
+    drush_log(dt("Upstream URI '$upstream' is not a Git repository."), 'error', $e->__toString());
     return bad_dog();
   }
 
   // Check that the 7.0 tag is the SHA1 we know it should be.
   if (strpos($remoteinfo, '497914920385b7016ac9c9367e0198530787adf2') !== 0) {
-    drush_log("Upstream URI '$upstream' is not a valid Drupal core repository.", 'error');
+    drush_log(dt("Upstream URI '$upstream' is not a valid Drupal core repository."), 'error');
     return bad_dog();
   }
 
@@ -234,18 +234,18 @@ function drush_dog_init($target = '') {
     $cmd .= ' ' . escapeshellarg($target);
   }
 
-  drush_log("Cloning '$upstream' into $realtarget.", 'info');
+  drush_log(dt("Cloning '$upstream' into $realtarget."), 'info');
 
   try {
     // Do the clone
     _dog_git_invoke($cmd);
   }
   catch (Exception $e) {
-    drush_log("Clone of upstream repository failed.", 'error');
+    drush_log(dt("Clone of upstream repository failed."), 'error');
     return bad_dog();
   }
 
-  drush_log("Successfully initialized a new dog instance in $realtarget.", 'success');
+  drush_log(dt("Successfully initialized a new dog instance in $realtarget."), 'success');
 
   // Create the appropriate local branch based on the requested start point
   $localbranch = drush_get_option('branch', 'master');
