@@ -19,6 +19,8 @@ function dog_drush_command() {
   $items['dog-init'] = array(
     'description' => 'Set up a new dog-managed Drupal instance.',
     'bootstrap' => DRUSH_BOOTSTRAP_DRUSH,
+    'callback' => 'dog_command',
+    'callback arguments' => array('init'),
     'arguments' => array(
       'target-dir' => "The target directory where the instance should be initialized. Defaults to the upstream repository name if unspecified (same behavior as `git clone`).",
     ),
@@ -39,6 +41,8 @@ function dog_drush_command() {
   $items['dog-dl'] = array(
     'description' => 'Download contributed projects from Drupal.org via git cloning and register them into the dog system. This is essentially a wrapper on `drush dl` without the "--version-control*" and "--package-handler*" arguments, as those considerations are handled by dog.',
     'bootstrap' => DRUSH_BOOTSTRAP_MAX,
+    'callback' => 'dog_command',
+    'callback arguments' => array('normal'),
     'arguments' => array(
       'project' => 'The contrib project from drupal in drush dl style (e.g "views-6.2.x"). Also accepts a full git URI for using non-drupal-hosted projects.',
       'target-dir' => 'The target directory where the contrib should be initialized. Defaults to sites/all/<contrib-type>/.',
@@ -130,6 +134,28 @@ function dog_drush_command() {
   return $items;
 }
 
+/*
+ * Dog utility functions
+ */
+
+function _dog_verify_git_path() {
+  // For now we do this the quick & cheat-y way: just try run `git --version`
+  try {
+    _dog_git_invoke('version');
+  }
+  catch (Exception $e) {
+    $git_path = drush_get_option('git_path', 'git');
+    if ($git_path === 'git') {
+      drush_set_error(DRUSH_DOG_NO_GIT_BINARY, dt("No valid Git binary could be found on the PATH."), 'error');
+    }
+    else {
+      drush_set_error(DRUSH_DOG_NO_GIT_BINARY, dt("A valid Git binary could not be located at the specified path '!path'.", array('!path' => $git_path)), 'error');
+    }
+    return FALSE;
+  }
+  return TRUE;
+}
+
 function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_safe = FALSE, $env = NULL) {
   static $git_path, $env_source;
 
@@ -190,6 +216,18 @@ function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_s
   }
 }
 
+function dog_command() {
+  $args = func_get_args();
+  $actual = array_shift($args); // First param is the actual command to run
+
+  $command = drush_get_command();
+
+  // No point in doing anything if a git binary can't be found
+  if (_dog_verify_git_path()) {
+    call_user_func_array('drush_invoke', array_merge(array($command['command-hook']), $args));
+  }
+}
+
 function good_dog() {
   drush_log(dt('Good dog!'), 'notice');
   return TRUE;
@@ -199,6 +237,11 @@ function bad_dog() {
   drush_log(dt('Bad dog!'), 'notice');
   return FALSE;
 }
+
+
+/*
+* Dog command callbacks
+*/
 
 function drush_dog_init($target = '') {
   $upstream = drush_get_option('upstream', 'drupal');
