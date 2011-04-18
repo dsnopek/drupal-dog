@@ -1,9 +1,13 @@
 <?php
 
+define('DRUSH_DOG_NO_GIT_BINARY', 151);
+
+define('DRUSH_DOG_BAD_ENV_SETTINGS', 152);
+
 function dog_drush_help($section) {
   switch ($section) {
     case 'meta:dog:title':
-      return dt('Drupal on Git (Dog) commands');
+      return dt('Drupal on Git (dog) commands');
     case 'meta:dog:summary':
       return dt('Build, develop, manage, and deploy an entire Drupal site using the dog methodology.');
   }
@@ -127,7 +131,26 @@ function dog_drush_command() {
 }
 
 function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_safe = FALSE, $env = NULL) {
-  static $git_path;
+  static $git_path, $env_source;
+
+  // Inherit env using the sanest possible settings
+  if (!isset($env_source)) {
+    $vo = ini_get('variables_order');
+    if (strpos($vo, 'E') !== FALSE) {
+      $env_source =& $_ENV;
+    }
+    else if (strpos($vo, 'S') !== FALSE) {
+      $env_source =& $_SERVER;
+    }
+    else {
+      $env_source = FALSE;
+    }
+  }
+
+  if ($env_source === FALSE) {
+    drush_set_error(DRUSH_DOG_BAD_ENV_SETTINGS, dt('Neither $_ENV nor $_SERVER are available to set up proper environment inheritance; ensure E and/or S is set in your php.ini\'s "variables_order" setting.'));
+    return FALSE;
+  }
 
   // Quick local static
   if (!isset($git_path)) {
@@ -135,7 +158,11 @@ function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_s
   }
 
   if (!isset($env)) {
-    $env = $_SERVER;
+    $env = $env_source;
+    if (isset($env['argv'])) {
+      // At least clean out argv/argc from this proc if we must rely on $_SERVER
+      unset($env['argv'], $env['argc']);
+    }
   }
   if ($repository_path) {
     $env['GIT_DIR'] = $repository_path;
@@ -156,7 +183,7 @@ function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_s
     $return_code = proc_close($process);
 
     if ($return_code != 0 && !$fail_safe) {
-      throw new Exception("Invocation of '" . $command . "' failed with return code " . $return_code .": \n" . $stdout . $stderr);
+      throw new Exception("Invocation of Git command '" . $command . "' failed with return code " . $return_code .": \n" . $stdout . $stderr);
     }
 
     return $stdout;
