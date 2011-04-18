@@ -358,3 +358,20 @@ function drush_dog_init($target = '') {
 
   return good_dog();
 }
+
+function drush_dog_dl() {
+  // First ensure we have a clean working copy
+  if (_dog_git_invoke('status -su no', DRUPAL_ROOT)) {
+    // TODO perhaps we should allow this case, or at least provide better helptext
+    drush_log(dt('You have uncommitted changes in your working copy; dog-dl requires a clean working copy to run.'), 'error');
+    return bad_dog();
+  }
+
+  drush_set_option('package_handler', 'git_drupalorg');
+  drush_set_option('gitsubmodule', TRUE);
+  if ($refcache = drush_get_option('git_reference_cache')) {
+    drush_set_option('gitcloneparams', "--reference $refcache");
+  }
+  drush_invoke_args('pm-download', func_get_args());
+
+}
