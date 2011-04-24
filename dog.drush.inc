@@ -2,7 +2,13 @@
 
 define('DRUSH_DOG_NO_GIT_BINARY', 151);
 
-define('DRUSH_DOG_BAD_ENV_SETTINGS', 152);
+define('DRUSH_DOG_GIT_INVOCATION_ERROR', 152);
+
+define('DRUSH_DOG_BAD_ENV_SETTINGS', 153);
+
+define('DRUSH_DOG_INVALID_UPSTREAM', 154);
+
+define('DRUSH_DOG_DIRTY_TREE', 155);
 
 function dog_drush_help($section) {
   switch ($section) {
@@ -16,10 +22,13 @@ function dog_drush_help($section) {
 function dog_drush_command() {
   $items = array();
 
+  $shared = array(
+    'callback' => 'dog_command',
+  );
+
   $items['dog-init'] = array(
     'description' => 'Set up a new dog-managed Drupal instance.',
     'bootstrap' => DRUSH_BOOTSTRAP_DRUSH,
-    'callback' => 'dog_command',
     'callback arguments' => array('init'),
     'arguments' => array(
       'target-dir' => "The target directory where the instance should be initialized. Defaults to the upstream repository name if unspecified (same behavior as `git clone`).",
@@ -36,7 +45,7 @@ function dog_drush_command() {
       'drush dog-init --upstream=git@gitorious.org:pressflow/6.git --upstream-ref=master --collab=file:///var/git/our_pressflow_project my_pressflow_project' =>
         'Initialize a new Pressflow project in "my_pressflow_project" from the master branch on a gitorious upstream, and a locally-hosted collab repository in /var/git.',
     ),
-  );
+  ) + $shared;
 
   $items['dog-dl'] = array(
     'description' => 'Download contributed projects from Drupal.org via git cloning and register them into the dog system. This is essentially a wrapper on `drush dl` without the "--version-control*" and "--package-handler*" arguments, as those considerations are handled by dog.',
@@ -56,12 +65,12 @@ function dog_drush_command() {
       'drush dog-dl https://github.com/kete/tiny_mce.git sites/all/libraries/tiny_mce' =>
         'Initialize tiny_mce from github in sits/all/libraries',
     ),
-  );
+  ) + $shared;
 
   $items['dog-vet'] = array(
     'bootstrap' => DRUSH_BOOTSTRAP_MAX,
     'description' => 'Inspect and report on the state of the current dog-managed Drupal instance, as it pertains to dog.',
-  );
+  ) + $shared;
 
   $items['dog-collab'] = array(
     'description' => 'Changes the collab remote to a module, theme or main repository. Useful if one was not set up initially or flexibility is required.',
@@ -73,7 +82,7 @@ function dog_drush_command() {
       'drush dog-collab git://github.com/me/my-views sites/all/modules/views' =>
         'Add a collab repo from github to the views module',
     ),
-  );
+  ) + $shared;
 
   $items['dog-catchup'] = array(
     'description' => 'Update an existing dog-managed Drupal site to the latest state recorded in the main collab repository.',
@@ -85,7 +94,7 @@ function dog_drush_command() {
       'wc-strategy' => 'Defines the behavior to use when working copy changes are encountered during sync. Acceptable values: stash (stash any changes found in the working copy), stash-reapply (stash, update, `git stash apply`), stash-pop (stash, update, `git stash pop`), discard (`git reset --hard HEAD`), skip (omit the repo from sync). Defaults to stash-pop.',
     ),
     'aliases' => array('dogre'),
-  );
+  ) + $shared;
 
   $items['dog-upstream-update'] = array(
     'description' => 'Pull updates from upstream and commit them to the collab remote if one exists.',
@@ -94,7 +103,7 @@ function dog_drush_command() {
       'target-dir' => 'Path to the module or theme directory, or drupal root where the collab should be added. Defaults to current working directory',
     ),
     'aliases' => array('dogup'),
-  );
+  ) + $shared;
 
   $items['dog-remove'] = array(
     'description' => 'Remove a dog-managed extension from the site. This removes the attached git repository and removes all references to it from dog\'s metadata.',
@@ -102,7 +111,7 @@ function dog_drush_command() {
       'target-dir' => 'Path to the module or theme directory, or drupal root where the collab should be added.',
     ),
     'aliases' => array('doggone'),
-  );
+  ) + $shared;
 
   $items['dog-rollout'] = array(
     'description' => 'Roll out a new dog-managed Drupal instance either from an existing dog repository or a raw dog manifest.',
@@ -112,7 +121,7 @@ function dog_drush_command() {
       'destination' => 'Path to the desired root of the instance. If unspecified, defaults to the `git-clone` behavior that inherits the local directory name from the remote URI; e.g., "git://...drupal.git" will be cloned into the relative path "drupal".',
     ),
     'aliases' => array('dogro'),
-  );
+  ) + $shared;
 
   $items['dog-rollup'] = array(
     'description' => 'Update the dog manifests & metadata, or init them if they have not yet been created.',
@@ -121,15 +130,15 @@ function dog_drush_command() {
       'no-commit' => 'Perform the roll up, but do not automatically commit the changes. By default, dog',
     ),
     'aliases' => array('dogru'),
-  );
+  ) + $shared;
 
   $items['dog-revert'] = array(
     'description' => 'Roll back a dog resync operation.',
-  );
+  ) + $shared;
 
   $items['dog-log'] = array(
     'description' => 'Wrapper on `git log` that helps filter log output to exclude upstream and irrelevant commit activity.',
-  );
+  ) + $shared;
 
   return $items;
 }
@@ -174,8 +183,7 @@ function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_s
   }
 
   if ($env_source === FALSE) {
-    drush_set_error(DRUSH_DOG_BAD_ENV_SETTINGS, dt('Neither $_ENV nor $_SERVER are available to set up proper environment inheritance; ensure E and/or S is set in your php.ini\'s "variables_order" setting.'));
-    return FALSE;
+    return drush_set_error(DRUSH_DOG_BAD_ENV_SETTINGS, dt('Neither $_ENV nor $_SERVER are available to set up proper environment inheritance; ensure E and/or S is set in your php.ini\'s "variables_order" setting.'));
   }
 
   // Quick local static
@@ -226,18 +234,14 @@ function dog_command() {
   if (_dog_verify_git_path()) {
     call_user_func_array('drush_invoke', array_merge(array($command['command-hook']), $args));
   }
-}
 
-function good_dog() {
-  drush_log(dt('Good dog!'), 'notice');
-  return TRUE;
+  if (drush_get_error()) {
+    drush_log(dt('Bad dog!'), 'notice');
+  }
+  else {
+    drush_log(dt('Good dog!'), 'notice');
+  }
 }
-
-function bad_dog() {
-  drush_log(dt('Bad dog!'), 'notice');
-  return FALSE;
-}
-
 
 /*
 * Dog command callbacks
@@ -257,8 +261,7 @@ function drush_dog_init($target = '') {
   else {
     $upstream_ref = drush_get_option('upstream-ref');
     if (!is_string($upstream_ref)) {
-      drush_log(dt('An upstream ref must be specified as the starting point for the dog instance.'), 'error');
-      return bad_dog();
+      return drush_set_error(DRUSH_DOG_INVALID_UPSTREAM, dt('An upstream ref must be specified as the starting point for the dog instance.'));
     }
   }
 
@@ -268,22 +271,19 @@ function drush_dog_init($target = '') {
   $realtarget = $target[0] != '/' ? getcwd() . '/' . $target : $target;
 
   if (file_exists($realtarget)) {
-    drush_log(dt("Target directory '$realtarget' already exists."), 'error');
-    return bad_dog();
+    return drush_set_error(DRUSH_DOG_INVALID_UPSTREAM, dt("Target directory '$realtarget' already exists."));
   }
 
   try {
     $remoteinfo = _dog_git_invoke('ls-remote ' . escapeshellarg($upstream) . ' 7.0');
   }
   catch (Exception $e) {
-    drush_log(dt("Upstream URI '$upstream' is not a Git repository."), 'error', $e->__toString());
-    return bad_dog();
+    return drush_set_error(DRUSH_DOG_INVALID_UPSTREAM, dt("Upstream URI '%upstream' is not a Git repository.", array('%upstream' => $upstream)));
   }
 
   // Check that the 7.0 tag is the SHA1 we know it should be.
   if (strpos($remoteinfo, '497914920385b7016ac9c9367e0198530787adf2') !== 0) {
-    drush_log(dt("Upstream URI '$upstream' is not a valid Drupal core repository."), 'error');
-    return bad_dog();
+    return drush_set_error(DRUSH_DOG_INVALID_UPSTREAM, dt("Upstream URI '%upstream' is not a valid Drupal core repository.", array('%upstream' => $upstream)));
   }
 
   // Build the base clone command.
@@ -309,8 +309,7 @@ function drush_dog_init($target = '') {
     _dog_git_invoke($cmd);
   }
   catch (Exception $e) {
-    drush_log(dt("Clone of upstream repository failed."), 'error');
-    return bad_dog();
+    return drush_set_error(DRUSH_DOG_GIT_INVOCATION_ERROR, dt("Clone of upstream repository failed."));
   }
 
   drush_log(dt("Successfully initialized a new dog instance in $realtarget."), 'success');
@@ -355,16 +354,13 @@ function drush_dog_init($target = '') {
   // -o -- <filespec> doesn't work on untracked files; have to add it first
   _dog_git_invoke('add -f -- sites/default/files/.gitignore', $realtarget);
   _dog_git_invoke('commit -m "Add sites/default/files with a .gitignore file" -o -- sites/default/files/.gitignore', $realtarget);
-
-  return good_dog();
 }
 
 function drush_dog_dl() {
   // First ensure we have a clean working copy
   if (_dog_git_invoke('status -su no', DRUPAL_ROOT)) {
     // TODO perhaps we should allow this case, or at least provide better helptext
-    drush_log(dt('You have uncommitted changes in your working copy; dog-dl requires a clean working copy to run.'), 'error');
-    return bad_dog();
+    return drush_set_error(DRUSH_DOG_DIRTY_TREE, dt('You have uncommitted changes in your working copy; dog-dl requires a clean working copy to run.'));
   }
 
   drush_set_option('package_handler', 'git_drupalorg');
