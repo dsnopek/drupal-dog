@@ -147,10 +147,18 @@ function dog_drush_command() {
  * Dog utility functions
  */
 
-function _dog_verify_git_path() {
-  // For now we do this the quick & cheat-y way: just try run `git --version`
+/**
+ * Determine whether the Git environment is adequate for dog's needs.
+ *
+ * We require a) an accessible, executable Git binary and b) that that binary
+ * be at least version 1.7.
+ *
+ * @return bool
+ *   Boolean indicating whether the Git environment is adequate.
+ */
+function _dog_verify_git() {
   try {
-    _dog_git_invoke('version');
+    $version = substr(trim(_dog_git_invoke('version')), 12);
   }
   catch (Exception $e) {
     $git_path = drush_get_option('git-path', 'git');
@@ -158,10 +166,16 @@ function _dog_verify_git_path() {
       drush_set_error(DRUSH_DOG_NO_GIT_BINARY, dt("No valid Git binary could be found on the PATH."), 'error');
     }
     else {
-      drush_set_error(DRUSH_DOG_NO_GIT_BINARY, dt("A valid Git binary could not be located at the specified path '!path'.", array('!path' => $git_path)), 'error');
+      drush_set_error(DRUSH_DOG_NO_GIT_BINARY, dt("A valid Git binary could not be located at '!path', as specified by your 'git-path' setting.", array('!path' => $git_path)), 'error');
     }
     return FALSE;
   }
+
+  if (version_compare($version, '1.7', 'lt')) {
+    drush_set_error('DRUSH_DOG_OLD_GIT_VERSION', dt('Your version of Git (!version) is too old; Dog requires version 1.7 or newer.', array('!version' => $version)));
+    return FALSE;
+  }
+
   return TRUE;
 }
 
@@ -231,7 +245,7 @@ function dog_command() {
   $command = drush_get_command();
 
   // No point in doing anything if a git binary can't be found
-  if (_dog_verify_git_path()) {
+  if (_dog_verify_git()) {
     call_user_func_array('drush_invoke', array_merge(array($command['command-hook']), $args));
   }
 
