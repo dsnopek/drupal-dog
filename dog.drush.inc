@@ -153,7 +153,7 @@ function _dog_verify_git_path() {
     _dog_git_invoke('version');
   }
   catch (Exception $e) {
-    $git_path = drush_get_option('git_path', 'git');
+    $git_path = drush_get_option('git-path', 'git');
     if ($git_path === 'git') {
       drush_set_error(DRUSH_DOG_NO_GIT_BINARY, dt("No valid Git binary could be found on the PATH."), 'error');
     }
@@ -188,7 +188,7 @@ function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_s
 
   // Quick local static
   if (!isset($git_path)) {
-    $git_path = drush_get_option('git_path', 'git');
+    $git_path = drush_get_option('git-path', 'git');
   }
 
   if (!isset($env)) {
@@ -290,7 +290,7 @@ function drush_dog_init($target = '') {
   $cmd = 'clone -q -o upstream --no-hardlinks ';
 
   // Use a refcache if drush has one specified
-  if ($refcache = drush_get_option('git_reference_cache')) {
+  if ($refcache = drush_get_option('git-reference-cache')) {
     $cmd .= "--reference $refcache ";
   }
 
@@ -363,9 +363,9 @@ function drush_dog_dl() {
     return drush_set_error(DRUSH_DOG_DIRTY_TREE, dt('You have uncommitted changes in your working copy; dog-dl requires a clean working copy to run.'));
   }
 
-  drush_set_option('package_handler', 'git_drupalorg');
+  drush_set_option('package-handler', 'git_drupalorg');
   drush_set_option('gitsubmodule', TRUE);
-  if ($refcache = drush_get_option('git_reference_cache')) {
+  if ($refcache = drush_get_option('git-reference-cache')) {
     drush_set_option('gitcloneparams', "--reference $refcache");
   }
   drush_invoke_args('pm-download', func_get_args());
