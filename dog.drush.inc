@@ -289,7 +289,7 @@ function drush_dog_init($target = '') {
   }
 
   try {
-    $remoteinfo = _dog_git_invoke('ls-remote ' . escapeshellarg($upstream) . ' 7.0');
+    $remoteinfo = _dog_git_invoke('ls-remote ' . drush_escapeshellarg($upstream) . ' 7.0');
   }
   catch (Exception $e) {
     return drush_set_error(DRUSH_DOG_INVALID_UPSTREAM, dt("Upstream URI '%upstream' is not a Git repository.", array('%upstream' => $upstream)));
@@ -309,11 +309,11 @@ function drush_dog_init($target = '') {
   }
 
   // add the clone uri and target dir
-  $cmd .= escapeshellarg($upstream);
+  $cmd .= drush_escapeshellarg($upstream);
 
   // add the target output dir
   if (!empty($target)) {
-    $cmd .= ' ' . escapeshellarg($target);
+    $cmd .= ' ' . drush_escapeshellarg($target);
   }
 
   drush_log(dt("Cloning '$upstream' into $realtarget."), 'info');
@@ -331,14 +331,14 @@ function drush_dog_init($target = '') {
   // Create the appropriate local branch based on the requested start point
   $localbranch = drush_get_option('branch', 'master');
 
-  $old = trim(_dog_git_invoke('symbolic-ref HEAD | cut -c 12-', $realtarget));
+  $old = substr(trim(_dog_git_invoke('symbolic-ref HEAD', $realtarget)), 11);
 
-  _dog_git_invoke('checkout -b ' . escapeshellarg($localbranch) . ' ' . escapeshellarg($upstream_ref), $realtarget);
+  _dog_git_invoke('checkout -b ' . drush_escapeshellarg($localbranch) . ' ' . drush_escapeshellarg($upstream_ref), $realtarget);
   _dog_git_invoke('branch -D ' . $old, $realtarget);
 
   // Set the collab uri
   $collab = drush_get_option('collab', $upstream);
-  _dog_git_invoke('remote add collab ' . escapeshellarg($collab), $realtarget);
+  _dog_git_invoke('remote add collab ' . drush_escapeshellarg($collab), $realtarget);
 
   // Init the .dog dir & sled
   mkdir($realtarget . '/.dog');
