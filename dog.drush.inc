@@ -143,6 +143,20 @@ function dog_drush_command() {
   return $items;
 }
 
+/**
+ * Declare a custom package handler for dog.
+ *
+ * We need this for cleanliness; even if the git_drupalorg handler is improved,
+ * we'll still probably want to keep this separate codepath.
+ */
+function dog_drush_engine_package_handler() {
+  return array(
+    'dog' => array(
+      'package-handler=dog' => 'Dog\'s internal package handler. Used internally by Dog; will fail if attempts are made to use it directly.',
+    ),
+  );
+}
+
 /*
  * Dog utility functions
  */
@@ -244,8 +258,11 @@ function dog_command() {
 
   $command = drush_get_command();
 
+
   // No point in doing anything if a git binary can't be found
   if (_dog_verify_git()) {
+    // Hacky way to indicate that we are operating in a proper dog environment.
+    drush_set_context('DOG', TRUE);
     call_user_func_array('drush_invoke', array_merge(array($command['command-hook']), $args));
   }
 
@@ -377,11 +394,18 @@ function drush_dog_dl() {
     return drush_set_error(DRUSH_DOG_DIRTY_TREE, dt('You have uncommitted changes in your working copy; dog-dl requires a clean working copy to run.'));
   }
 
-  drush_set_option('package-handler', 'git_drupalorg');
-  drush_set_option('gitsubmodule', TRUE);
+  drush_set_option('package-handler', 'dog');
   if ($refcache = drush_get_option('git-reference-cache')) {
     drush_set_option('gitcloneparams', "--reference $refcache");
   }
-  drush_invoke_args('pm-download', func_get_args());
 
+  $args = func_get_args();
+
+  if (empty($args)) {
+    return drush_set_error(DRUSH_PM_REQUESTED_PROJECT_NOT_FOUND, dt('You must specify at least one project to download.'));
+  }
+
+  // TODO disallow core, drush, dog
+
+  drush_invoke_args('pm-download', $args);
 }
