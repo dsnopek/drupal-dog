@@ -103,30 +103,7 @@ function package_handler_download_project(&$request, $release) {
  *   The release details array from drupal.org.
  */
 function package_handler_update_project($request, $release) {
-  // FIXME this is all still code copied over from git_drupalorg
-  drush_log('Updating project ' . $request['name'] . ' ...');
-
-  $commands = array();
-  if ($release['version_extra'] == 'dev') {
-    // Update the branch of the development repository.
-    $commands[] = 'git pull';
-    $commands[] = drush_get_option('gitpullparams');
-  }
-  else {
-    // Use a stable repository.
-    $commands[] = 'git fetch';
-    $commands[] = drush_get_option('gitfetchparams');
-    $commands[] = ';';
-    $commands[] = 'git checkout';
-    $commands[] = drush_get_option('gitcheckoutparams');
-    $commands[] = $release['version'];
-  }
-
-  if (!drush_shell_cd_and_exec($request['full_project_path'], implode(' ', $commands))) {
-    return drush_set_error('DRUSH_PM_UNABLE_CHECKOUT', 'Unable to update ' . $request['name'] . ' from git.drupal.org.');
-  }
-
-  return TRUE;
+  // FIXME this needs to actually get implemented, once we're on to the dog updating commands
 }
 
 /**
