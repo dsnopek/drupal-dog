@@ -137,25 +137,15 @@ function package_handler_update_project($request, $release) {
  * sledfile.
  */
 function package_handler_post_download($project) {
-  // FIXME this is all still code copied over from git_drupalorg
-  if (drush_get_option('gitsubmodule', FALSE)) {
-    // Obtain the superproject path, then add as submodule.
-    if (drush_shell_cd_and_exec(dirname($project['full_project_path']), 'git rev-parse --show-toplevel')) {
-      $output = drush_shell_exec_output();
-      $superproject = $output[0];
-      // Add the downloaded project as a submodule of its git superproject.
-      $command = array();
-      $command[] = 'git submodule add';
-      $command[] = drush_get_option('gitsubmoduleaddparams');
-      $command[] = $project['repository'];
-      // We need the submodule relative path.
-      $command[] = substr($project['full_project_path'], strlen($superproject) + 1);
-      if (!drush_shell_cd_and_exec($superproject, implode(' ', $command))) {
-        return drush_set_error('DRUSH_PM_GIT_CHECKOUT_PROBLEMS', dt('Unable to add !name as a git submodule of !super.', array('!name' => $project['name'], '!super' => $superproject)));
-      }
-    }
-    else {
-      return drush_set_error('DRUSH_PM_GIT_SUBMODULE_PROBLEMS', dt('Unable to create !project as a git submodule: !dir is not in a Git repository.', array('!project' => $project['name'], '!dir' => dirname($project['full_project_path']))));
-    }
+  // Obtain the superproject path, then add as submodule.
+  $parent_path = trim(_dog_git_invoke('rev-parse --show-toplevel', dirname($project['full_project_path'])));
+  $cmd = 'submodule add ';
+  $cmd .= $project['repository'];
+  $cmd .= ' ' . substr($project['full_project_path'], strlen($parent_path) + 1);
+  try {
+    _dog_git_invoke($cmd, $parent_path);
+  }
+  catch (Exception $e) {
+    return drush_set_error('DRUSH_DOG_SUBMODULE_FAILURE', dt('Unable to add !name as a git submodule of !super.', array('!name' => $project['name'], '!super' => $parent_path)));
   }
 }
