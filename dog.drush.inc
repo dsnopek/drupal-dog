@@ -163,10 +163,10 @@ function _dog_verify_git() {
   catch (Exception $e) {
     $git_path = drush_get_option('git-path', 'git');
     if ($git_path === 'git') {
-      drush_set_error(DRUSH_DOG_NO_GIT_BINARY, dt("No valid Git binary could be found on the PATH."), 'error');
+      drush_set_error('DRUSH_DOG_NO_GIT_BINARY', dt("No valid Git binary could be found on the PATH."), 'error');
     }
     else {
-      drush_set_error(DRUSH_DOG_NO_GIT_BINARY, dt("A valid Git binary could not be located at '!path', as specified by your 'git-path' setting.", array('!path' => $git_path)), 'error');
+      drush_set_error('DRUSH_DOG_NO_GIT_BINARY', dt("A valid Git binary could not be located at '!path', as specified by your 'git-path' setting.", array('!path' => $git_path)), 'error');
     }
     return FALSE;
   }
@@ -197,7 +197,7 @@ function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_s
   }
 
   if ($env_source === FALSE) {
-    return drush_set_error(DRUSH_DOG_BAD_ENV_SETTINGS, dt('Neither $_ENV nor $_SERVER are available to set up proper environment inheritance; ensure E and/or S is set in your php.ini\'s "variables_order" setting.'));
+    return drush_set_error('DRUSH_DOG_BAD_ENV_SETTINGS', dt('Neither $_ENV nor $_SERVER are available to set up proper environment inheritance; ensure E and/or S is set in your php.ini\'s "variables_order" setting.'));
   }
 
   // Quick local static
@@ -275,7 +275,7 @@ function drush_dog_init($target = '') {
   else {
     $upstream_ref = drush_get_option('upstream-ref');
     if (!is_string($upstream_ref)) {
-      return drush_set_error(DRUSH_DOG_INVALID_UPSTREAM, dt('An upstream ref must be specified as the starting point for the dog instance.'));
+      return drush_set_error('DRUSH_DOG_INVALID_UPSTREAM', dt('An upstream ref must be specified as the starting point for the dog instance.'));
     }
   }
 
@@ -285,19 +285,19 @@ function drush_dog_init($target = '') {
   $realtarget = $target[0] != '/' ? getcwd() . '/' . $target : $target;
 
   if (file_exists($realtarget)) {
-    return drush_set_error(DRUSH_DOG_INVALID_UPSTREAM, dt("Target directory '$realtarget' already exists."));
+    return drush_set_error('DRUSH_DOG_TARGET_DIRECTORY_EXISTS', dt("Target directory '$realtarget' already exists."));
   }
 
   try {
     $remoteinfo = _dog_git_invoke('ls-remote ' . drush_escapeshellarg($upstream) . ' 7.0');
   }
   catch (Exception $e) {
-    return drush_set_error(DRUSH_DOG_INVALID_UPSTREAM, dt("Upstream URI '%upstream' is not a Git repository.", array('%upstream' => $upstream)));
+    return drush_set_error('DRUSH_DOG_INVALID_UPSTREAM', dt("Upstream URI '%upstream' is not a Git repository.", array('%upstream' => $upstream)));
   }
 
   // Check that the 7.0 tag is the SHA1 we know it should be.
   if (strpos($remoteinfo, '497914920385b7016ac9c9367e0198530787adf2') !== 0) {
-    return drush_set_error(DRUSH_DOG_INVALID_UPSTREAM, dt("Upstream URI '%upstream' is not a valid Drupal core repository.", array('%upstream' => $upstream)));
+    return drush_set_error('DRUSH_DOG_INVALID_UPSTREAM', dt("Upstream URI '%upstream' is not a valid Drupal core repository.", array('%upstream' => $upstream)));
   }
 
   // Build the base clone command.
@@ -323,7 +323,7 @@ function drush_dog_init($target = '') {
     _dog_git_invoke($cmd);
   }
   catch (Exception $e) {
-    return drush_set_error(DRUSH_DOG_GIT_INVOCATION_ERROR, dt("Clone of upstream repository failed."));
+    return drush_set_error('DRUSH_DOG_GIT_INVOCATION_ERROR', dt("Clone of upstream repository failed."));
   }
 
   drush_log(dt("Successfully initialized a new dog instance in $realtarget."), 'success');
@@ -374,7 +374,7 @@ function drush_dog_dl() {
   // First ensure we have a clean working copy
   if (_dog_git_invoke('status -su no', DRUPAL_ROOT)) {
     // TODO perhaps we should allow this case, or at least provide better helptext
-    return drush_set_error(DRUSH_DOG_DIRTY_TREE, dt('You have uncommitted changes in your working copy; dog-dl requires a clean working copy to run.'));
+    return drush_set_error('DRUSH_DOG_DIRTY_TREE', dt('You have uncommitted changes in your working copy; dog-dl requires a clean working copy to run.'));
   }
 
   drush_set_option('package-handler', 'git_drupalorg');
