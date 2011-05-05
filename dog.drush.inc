@@ -389,7 +389,7 @@ function drush_dog_init($target = '') {
 
 function drush_dog_dl() {
   // First ensure we have a clean working copy
-  if (_dog_git_invoke('status -su no', DRUPAL_ROOT)) {
+  if (_dog_git_invoke('status -s --untracked-files=no', DRUPAL_ROOT)) {
     // TODO perhaps we should allow this case, or at least provide better helptext
     return drush_set_error(DRUSH_DOG_DIRTY_TREE, dt('You have uncommitted changes in your working copy; dog-dl requires a clean working copy to run.'));
   }
