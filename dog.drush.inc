@@ -221,20 +221,27 @@ function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_s
     2 => array('pipe', 'w'),
   );
 
-  $process = proc_open("$git_path $command", $descriptor_spec, $pipes, $cwd, $env);
-  if (is_resource($process)) {
-    $stdout = stream_get_contents($pipes[1]);
-    fclose($pipes[1]);
-    $stderr = stream_get_contents($pipes[2]);
-    fclose($pipes[2]);
+  // proc_open() and $pipes var preclude using drush_op() so we simulate it.
+  if (drush_get_context('DRUSH_VERBOSE') || drush_get_context('DRUSH_SIMULATE')) {
+     drush_print("Calling proc_open($git_path $command)");
+  }
 
-    $return_code = proc_close($process);
+  if (!drush_get_context('DRUSH_SIMULATE')) {
+    $process = proc_open("$git_path $command", $descriptor_spec, $pipes, $cwd, $env);
+    if (is_resource($process)) {
+      $stdout = stream_get_contents($pipes[1]);
+      fclose($pipes[1]);
+      $stderr = stream_get_contents($pipes[2]);
+      fclose($pipes[2]);
 
-    if ($return_code != 0 && !$fail_safe) {
-      throw new Exception("Invocation of Git command '" . $command . "' failed with return code " . $return_code .": \n" . $stdout . $stderr);
+      $return_code = proc_close($process);
+
+      if ($return_code != 0 && !$fail_safe) {
+        throw new Exception("Invocation of Git command '" . $command . "' failed with return code " . $return_code .": \n" . $stdout . $stderr);
+      }
+
+      return $stdout;
     }
-
-    return $stdout;
   }
 }
 
