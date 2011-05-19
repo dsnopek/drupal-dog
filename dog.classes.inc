@@ -1,6 +1,14 @@
 <?php
 
-class DogHouse {
+interface DogHouseInterface {
+  public function getRepository($path);
+
+  public function attachRepository(DogRepositoryInterface $repository);
+
+  public function verify();
+}
+
+class DogHouse implements DogHouseInterface {
 
   /**
    *
