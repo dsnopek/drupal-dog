@@ -23,7 +23,9 @@ function dog_drush_command() {
   $items = array();
 
   $shared = array(
-    'callback' => 'dog_command',
+    'callback' => 'dog_main',
+    'callback required prefix' => 'dog_',
+    'callback arguments' => 'normal',
   );
 
   $items['dog-init'] = array(
@@ -51,7 +53,6 @@ function dog_drush_command() {
     'description' => 'Download contributed projects from Drupal.org via git cloning and register them into the dog system. This is essentially a wrapper on `drush dl` without the "--version-control*" and "--package-handler*" arguments, as those considerations are handled by dog.',
     'bootstrap' => DRUSH_BOOTSTRAP_MAX,
     'callback' => 'dog_command',
-    'callback arguments' => array('normal'),
     'arguments' => array(
       'project' => 'The contrib project from drupal in drush dl style (e.g "views-6.2.x"). Also accepts a full git URI for using non-drupal-hosted projects.',
       'target-dir' => 'The target directory where the contrib should be initialized. Defaults to sites/all/<contrib-type>/.',
@@ -116,6 +117,7 @@ function dog_drush_command() {
   $items['dog-rollout'] = array(
     'description' => 'Roll out a new dog-managed Drupal instance either from an existing dog repository or a raw dog manifest.',
     'bootstrap' => DRUSH_BOOTSTRAP_DRUSH,
+    'callback arguments' => array('init'),
     'arguments' => array(
       'source' => 'A URI, resolving either to an already-built dog Git repository, or a raw dog manifest from which a new dog repository should be created.',
       'destination' => 'Path to the desired root of the instance. If unspecified, defaults to the `git-clone` behavior that inherits the local directory name from the remote URI; e.g., "git://...drupal.git" will be cloned into the relative path "drupal".',
@@ -238,15 +240,23 @@ function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_s
   }
 }
 
-function dog_command() {
-  $args = func_get_args();
-  $actual = array_shift($args); // First param is the actual command to run
+function dog_main() {
+  // Before anything, verify our git configuration is satisfactory
+  if (!_dog_verify_git()) {
+    return drush_log(dt('Bad dog!'), 'notice');
+  }
 
+  $args = func_get_args();
+  $flow = array_shift($args); // First param tells us if we're in a special-case init
   $command = drush_get_command();
 
-  // No point in doing anything if a git binary can't be found
-  if (_dog_verify_git()) {
-    call_user_func_array('drush_invoke', array_merge(array($command['command-hook']), $args));
+  // We have a slightly different flow for init than for normal commands
+  if ($flow === 'init') {
+    _dog_init_command($args, $command);
+
+  }
+  else {
+    _dog_normal_command($args, $command);
   }
 
   if (drush_get_error()) {
@@ -255,6 +265,17 @@ function dog_command() {
   else {
     drush_log(dt('Good dog!'), 'notice');
   }
+}
+
+function _dog_normal_command($args, $command) {
+    $dog = new DogHouse(DRUPAL_ROOT);
+    $dog->verify();
+    drush_set_context('doghouse', $dog);
+    call_user_func_array('drush_invoke', array_merge(array($command['command-hook'], $dog), $args));
+}
+
+function _dog_init_command($args, $command) {
+  call_user_func_array('drush_invoke', array_merge(array($command['command-hook']), $args));
 }
 
 /*
