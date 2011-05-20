@@ -108,6 +108,41 @@ class DogSled {
   }
 }
 
+/**
+ * Interface defining the behavior of all Dog commands.
+ *
+ * Dog Commands directly correspond to the list of commands declared in
+ * dog_drush_command(). This OO interface is used in place of the typical
+ * procedural approach used by drush in order to make overriding commands for
+ * a specific Dog-managed site build easier. It also makes dependency injection
+ * a little cleaner.
+ */
+interface DogCommandInterface {
+  /**
+   * Set up a new DogCommand and prepare it for execution.
+   *
+   * @param DogHouseInterface $dog
+   *   The DogHouse object on which this command will act.
+   */
+  public function __construct(DogHouseInterface $dog);
+
+  /**
+   * Ensure all environmental factors and other preconditions necessary for
+   * this command to run properly are met.
+   *
+   */
+  public function validate();
+
+  /**
+   * Run the command.
+   *
+   * @param array $args
+   *   An array of argument data. These are entirely command-specific, and are
+   *   equivalent to what is retrieved in an ordinary drush command callback
+   *   by calling func_get_args().
+   */
+  public function runCommand($args);
+}
 
 /**
  * Interface defining general behaviors for all Dog repositories, regardless of
