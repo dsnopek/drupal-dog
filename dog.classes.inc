@@ -154,11 +154,11 @@ interface DogRepositoryInterface {
    *
    * @var mixed
    */
-  public $lastStderr;
+  public function getlastStderr();
 
-  public $lastStdout;
+  public function getlastStdout();
 
-  public $lastExit;
+  public function getlastExit();
 
   /**
    * Return the branch currently checked out in this repository.
@@ -209,12 +209,8 @@ abstract class DogRepositoryBase implements DogRepositoryInterface {
   }
 }
 
-class DogMainRepository extends DogRepositoryBase {
 
-}
-
-
-abstract class DogRepo implements DogRepoInterface {
+abstract class DogRepo implements DogRepositoryInterface {
   public function __construct($repo_path) {
 
   }
