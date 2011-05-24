@@ -10,6 +10,8 @@ define('DRUSH_DOG_INVALID_UPSTREAM', 154);
 
 define('DRUSH_DOG_DIRTY_TREE', 155);
 
+require_once dirname(__FILE__) . "/dog.classes.inc";
+
 function dog_drush_help($section) {
   switch ($section) {
     case 'meta:dog:title':
@@ -23,15 +25,15 @@ function dog_drush_command() {
   $items = array();
 
   $shared = array(
-    'callback' => 'dog_main',
-    'callback required prefix' => 'dog_',
-    'callback arguments' => 'normal',
+    // 'callback' => 'dog_main',
+    // 'callback required prefix' => 'dog_',
+    // 'callback arguments' => 'normal',
+    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_ROOT,
   );
 
   $items['dog-init'] = array(
     'description' => 'Set up a new dog-managed Drupal instance.',
     'bootstrap' => DRUSH_BOOTSTRAP_DRUSH,
-    'callback arguments' => array('init'),
     'arguments' => array(
       'target-dir' => "The target directory where the instance should be initialized. Defaults to the upstream repository name if unspecified (same behavior as `git clone`).",
     ),
@@ -51,8 +53,7 @@ function dog_drush_command() {
 
   $items['dog-dl'] = array(
     'description' => 'Download contributed projects from Drupal.org via git cloning and register them into the dog system. This is essentially a wrapper on `drush dl` without the "--version-control*" and "--package-handler*" arguments, as those considerations are handled by dog.',
-    'bootstrap' => DRUSH_BOOTSTRAP_MAX,
-    'callback' => 'dog_command',
+//    'bootstrap' => DRUSH_BOOTSTRAP_MAX,
     'arguments' => array(
       'project' => 'The contrib project from drupal in drush dl style (e.g "views-6.2.x"). Also accepts a full git URI for using non-drupal-hosted projects.',
       'target-dir' => 'The target directory where the contrib should be initialized. Defaults to sites/all/<contrib-type>/.',
@@ -69,7 +70,7 @@ function dog_drush_command() {
   ) + $shared;
 
   $items['dog-vet'] = array(
-    'bootstrap' => DRUSH_BOOTSTRAP_MAX,
+//    'bootstrap' => DRUSH_BOOTSTRAP_MAX,
     'description' => 'Inspect and report on the state of the current dog-managed Drupal instance, as it pertains to dog.',
   ) + $shared;
 
@@ -87,7 +88,6 @@ function dog_drush_command() {
 
   $items['dog-catchup'] = array(
     'description' => 'Update an existing dog-managed Drupal site to the latest state recorded in the main collab repository.',
-    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_ROOT,
     'arguments' => array(
       'repositories' => 'A space-delimited list of repositories attached to the dog instance that should be synced. If none specified, all repositories are synced.',
     ),
@@ -99,7 +99,6 @@ function dog_drush_command() {
 
   $items['dog-upstream-update'] = array(
     'description' => 'Pull updates from upstream and commit them to the collab remote if one exists.',
-    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_ROOT,
     'arguments' => array(
       'target-dir' => 'Path to the module or theme directory, or drupal root where the collab should be added. Defaults to current working directory',
     ),
@@ -117,7 +116,6 @@ function dog_drush_command() {
   $items['dog-rollout'] = array(
     'description' => 'Roll out a new dog-managed Drupal instance either from an existing dog repository or a raw dog manifest.',
     'bootstrap' => DRUSH_BOOTSTRAP_DRUSH,
-    'callback arguments' => array('init'),
     'arguments' => array(
       'source' => 'A URI, resolving either to an already-built dog Git repository, or a raw dog manifest from which a new dog repository should be created.',
       'destination' => 'Path to the desired root of the instance. If unspecified, defaults to the `git-clone` behavior that inherits the local directory name from the remote URI; e.g., "git://...drupal.git" will be cloned into the relative path "drupal".',
@@ -127,7 +125,6 @@ function dog_drush_command() {
 
   $items['dog-rollup'] = array(
     'description' => 'Update the dog manifests & metadata, or init them if they have not yet been created.',
-    'bootstrap' => DRUSH_BOOTSTRAP_DRUPAL_ROOT,
     'options' => array(
       'no-commit' => 'Perform the roll up, but do not automatically commit the changes. By default, dog',
     ),
@@ -240,25 +237,26 @@ function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_s
   }
 }
 
-function dog_main() {
-  // Before anything, verify our git configuration is satisfactory
-  if (!_dog_verify_git()) {
-    return drush_log(dt('Bad dog!'), 'notice');
-  }
-
-  $args = func_get_args();
-  $flow = array_shift($args); // First param tells us if we're in a special-case init
+function dog_drush_init() {
   $command = drush_get_command();
 
-  // We have a slightly different flow for init than for normal commands
-  if ($flow === 'init') {
-    _dog_init_command($args, $command);
-
+  // Check to see if we're running a dog command.
+  if (strpos($command['command-hook'], 'dog-') === 0) {
+    if (in_array($command['command-hook'], array('dog-init', 'dog-rollout'))) {
+      _dog_init_command();
+    }
+    else {
+      _dog_normal_command();
+    }
   }
-  else {
-    _dog_normal_command($args, $command);
+}
+
+function dog_drush_exit() {
+  if (!dog_get_house()) {
+    return;
   }
 
+  // Add our cute little final dog message
   if (drush_get_error()) {
     drush_log(dt('Bad dog!'), 'notice');
   }
@@ -267,15 +265,33 @@ function dog_main() {
   }
 }
 
-function _dog_normal_command($args, $command) {
-    $dog = new DogHouse(DRUPAL_ROOT);
-    $dog->verify();
-    drush_set_context('doghouse', $dog);
-    call_user_func_array('drush_invoke', array_merge(array($command['command-hook'], $dog), $args));
+/**
+ * Retrieve the top-level DogHouse used for this dog command, if one exists.
+ */
+function dog_get_house() {
+  $dog = drush_get_context('doghouse');
+  return $dog instanceof DogHouseInterface ? $dog : FALSE;
 }
 
-function _dog_init_command($args, $command) {
-  call_user_func_array('drush_invoke', array_merge(array($command['command-hook']), $args));
+function _dog_normal_command() {
+  if (!file_exists(DRUPAL_ROOT . "/.dog/sled")) {
+    // Running a dog command, but this isn't a dog instance. Whoops.
+    drush_set_error('DRUSH_DOG_NOT_A_DOG_INSTANCE', "Not in a valid dog instance, cannot execute dog commands.");
+    return;
+  }
+
+  $dog = new DogHouse(DRUPAL_ROOT);
+  $dog->verify();
+  drush_set_context('doghouse', $dog);
+  // call_user_func_array('drush_invoke', array_merge(array($command['command-hook'], $dog), $args));
+
+}
+
+/**
+ * Run any preparation/setup necessary for dog init commands.
+ */
+function _dog_init_command() {
+  // Prep run for init commands
 }
 
 /*
