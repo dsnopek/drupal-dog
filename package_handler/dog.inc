@@ -14,14 +14,14 @@
  *  - We are in a valid dog-managed instance.
  */
 function package_handler_validate() {
-  if (!drush_get_context('DOG', FALSE)) {
-    return drush_set_error('DRUSH_DOG_NOT_DOG_INSTANCE');
+  if (!dog_get_house()) {
+    drush_set_error('DRUSH_DOG_NOT_A_DOG_INSTANCE', "Not in a valid dog instance, cannot use the dog package handler..");
   }
 
   // Check git_deploy is enabled. Only for bootstrapped sites.
   if (drush_get_context('DRUSH_BOOTSTRAP_PHASE') >= DRUSH_BOOTSTRAP_DRUPAL_FULL) {
     if (!module_exists('git_deploy')) {
-      drush_log(dt('git package handler needs git_deploy module enabled to work properly.'), 'warning');
+      drush_log(dt('dog package handler needs git_deploy module enabled to work properly.'), 'warning');
     }
   }
 }
@@ -35,6 +35,7 @@ function package_handler_validate() {
  *   The release details array from drupal.org.
  */
 function package_handler_download_project(&$request, $release) {
+  $dog = &dog_get_house();
   // Uses HTTP, ensuring maximum (port) accessibility
   $repository = 'http://git.drupal.org/project/' . $request['name'] . '.git';
   $request['repository'] = $repository;
@@ -103,6 +104,7 @@ function package_handler_download_project(&$request, $release) {
  *   The release details array from drupal.org.
  */
 function package_handler_update_project($request, $release) {
+  $dog = &dog_get_house();
   // FIXME this needs to actually get implemented, once we're on to the dog updating commands
 }
 
@@ -114,6 +116,7 @@ function package_handler_update_project($request, $release) {
  * sledfile.
  */
 function package_handler_post_download($project) {
+  $dog = &dog_get_house();
   // Obtain the superproject path, then add as submodule.
   $parent_path = trim(_dog_git_invoke('rev-parse --show-toplevel', dirname($project['full_project_path'])));
   $cmd = 'submodule add ';
