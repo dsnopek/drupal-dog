@@ -10,8 +10,6 @@ define('DRUSH_DOG_INVALID_UPSTREAM', 154);
 
 define('DRUSH_DOG_DIRTY_TREE', 155);
 
-require_once dirname(__FILE__) . "/dog.classes.inc";
-
 function dog_drush_help($section) {
   switch ($section) {
     case 'meta:dog:title':
@@ -280,11 +278,12 @@ function dog_drush_exit() {
 }
 
 /**
- * Retrieve the top-level DogHouse used for this dog command, if one exists.
+ * Retrieve the top-level object implementing Dog_House_Interface that is used
+ * for this dog command, if one exists.
  */
 function dog_get_house() {
   $dog = drush_get_context('doghouse');
-  return $dog instanceof DogHouseInterface ? $dog : FALSE;
+  return $dog instanceof Dog_House_DefaultInterface ? $dog : FALSE;
 }
 
 function _dog_normal_command() {
@@ -294,7 +293,9 @@ function _dog_normal_command() {
     return;
   }
 
-  $dog = new DogHouse(DRUPAL_ROOT);
+  spl_autoload_register('dog_autoload');
+
+  $dog = new Dog_House_Default(DRUPAL_ROOT);
   $dog->verify();
   drush_set_context('doghouse', $dog);
   // call_user_func_array('drush_invoke', array_merge(array($command['command-hook'], $dog), $args));
@@ -305,7 +306,49 @@ function _dog_normal_command() {
  * Run any preparation/setup necessary for dog init commands.
  */
 function _dog_init_command() {
+  spl_autoload_register('dog_autoload_init');
   // Prep run for init commands
+}
+
+/**
+ * Autoloader for initialization (init & rollout) dog commands.
+ *
+ */
+function dog_autoload_init($class) {
+  static $base_path;
+
+  if (is_null($base_path)) {
+    $command = drush_get_command();
+    $base_path = $command['path'] . '/lib/';
+  }
+
+  $file = $base_path . strtr($class, '_', '/') . '.php';
+  if (file_exists($file)) {
+    require $file;
+    return TRUE;
+  }
+}
+
+/**
+ * Autoloader for normal dog commands. This establishes the base autoloading
+ * path at DRUPAL_ROOT/.dog/lib.
+ *
+ * TODO: create a mechanism for allowing zero-conf overriding of the default
+ * classes. Probably follow the cascading filesystem pattern used by Kohana.
+ *
+ */
+function dog_autoload($class) {
+  static $base_path;
+
+  if (is_null($base_path)) {
+    $base_path = DRUPAL_ROOT . '/.dog/lib/';
+  }
+
+  $file = $base_path . strtr($class, '_', '/') . '.php';
+  if (file_exists($file)) {
+    require $file;
+    return TRUE;
+  }
 }
 
 /*
@@ -393,6 +436,14 @@ function drush_dog_init($target = '') {
 
   // Init the .dog dir & sled
   mkdir($realtarget . '/.dog');
+
+  // Move the dog lib dir into place within the site instance
+  $command = drush_get_command();
+  $libpath = $command['path'] . '/lib/';
+  drush_copy_dir($libpath, "$realtarget/.dog/lib");
+
+  _dog_git_invoke('add -f -- .dog/lib', $realtarget);
+  _dog_git_invoke('commit -m "Add dog class library." -o -- .dog/lib', $realtarget);
 
   // For now at least, we just manually write a sledfile.
   $sledfile = new SplFileObject("$realtarget/.dog/sled", 'w+');
