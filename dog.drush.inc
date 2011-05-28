@@ -242,7 +242,7 @@ function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_s
     $return_code = proc_close($process);
 
     if ($return_code != 0 && !$fail_safe) {
-      throw new Exception("Invocation of Git command '" . $command . "' failed with return code " . $return_code .": \n" . $stdout . $stderr);
+      throw new \Exception("Invocation of Git command '" . $command . "' failed with return code " . $return_code .": \n" . $stdout . $stderr);
     }
 
     return $stdout;
@@ -283,7 +283,7 @@ function dog_drush_exit() {
  */
 function dog_get_house() {
   $dog = drush_get_context('doghouse');
-  return $dog instanceof Dog_House_DefaultInterface ? $dog : FALSE;
+  return $dog instanceof Dog\House\IHouse ? $dog : FALSE;
 }
 
 function _dog_normal_command() {
@@ -295,7 +295,7 @@ function _dog_normal_command() {
 
   spl_autoload_register('dog_autoload');
 
-  $dog = new Dog_House_Default(DRUPAL_ROOT);
+  $dog = new Dog\House\DefaultHouse(DRUPAL_ROOT);
   $dog->verify();
   drush_set_context('doghouse', $dog);
   // call_user_func_array('drush_invoke', array_merge(array($command['command-hook'], $dog), $args));
@@ -317,15 +317,18 @@ function _dog_init_command() {
 function dog_autoload_init($class) {
   static $base_path;
 
-  if (is_null($base_path)) {
-    $command = drush_get_command();
-    $base_path = $command['path'] . '/lib/';
-  }
+  // Only take action if searching for a dog class.
+  if (strpos($class, 'Dog\\') === 0) {
+    if (is_null($base_path)) {
+      $command = drush_get_command();
+      $base_path = $command['path'] . '/lib/';
+    }
 
-  $file = $base_path . strtr($class, '_', '/') . '.php';
-  if (file_exists($file)) {
-    require $file;
-    return TRUE;
+    $file = $base_path . strtr($class, '_', '/') . '.php';
+    if (is_file($file)) {
+      require $file;
+      return TRUE;
+    }
   }
 }
 
@@ -333,21 +336,31 @@ function dog_autoload_init($class) {
  * Autoloader for normal dog commands. This establishes the base autoloading
  * path at DRUPAL_ROOT/.dog/lib.
  *
- * TODO: create a mechanism for allowing zero-conf overriding of the default
- * classes. Probably follow the cascading filesystem pattern used by Kohana.
- *
  */
 function dog_autoload($class) {
-  static $base_path;
+  static $search_paths;
 
-  if (is_null($base_path)) {
-    $base_path = DRUPAL_ROOT . '/.dog/lib/';
-  }
+  // Only take action if searching for a dog class.
+  if (strpos($class, 'Dog\\') === 0) {
+    if ($search_paths === NULL) {
+      // FIXME use a proper method for discovering the base path to the cmd file
+      $command = drush_get_command();
 
-  $file = $base_path . strtr($class, '_', '/') . '.php';
-  if (file_exists($file)) {
-    require $file;
-    return TRUE;
+      $search_paths = array(
+        DRUPAL_ROOT . '/.dog/lib-local/', // local overrides
+        DRUPAL_ROOT . '/.dog/lib/', // classes in dog instance
+        $command['path'] . '/lib/', // classes in base dog install
+      );
+    }
+
+    // Try the search paths in order
+    foreach ($search_paths as $base_path) {
+      $file = $base_path . strtr($class, '\\', '/') . '.php';
+      if (is_file($file)) {
+        require $file;
+        return TRUE;
+      }
+    }
   }
 }
 
@@ -446,7 +459,7 @@ function drush_dog_init($target = '') {
   _dog_git_invoke('commit -m "Add dog class library." -o -- .dog/lib', $realtarget);
 
   // For now at least, we just manually write a sledfile.
-  $sledfile = new SplFileObject("$realtarget/.dog/sled", 'w+');
+  $sledfile = new \SplFileObject("$realtarget/.dog/sled", 'w+');
 
   $data = array(
     'mainRepo' => array(
@@ -464,7 +477,7 @@ function drush_dog_init($target = '') {
     mkdir($realtarget . '/sites/default/files');
   }
 
-  $gitignore = new SplFileObject($realtarget . '/sites/default/files/.gitignore', 'w');
+  $gitignore = new \SplFileObject($realtarget . '/sites/default/files/.gitignore', 'w');
   $gitignore->fwrite("*\n!.gitignore\n");
 
   // -o -- <filespec> doesn't work on untracked files; have to add it first

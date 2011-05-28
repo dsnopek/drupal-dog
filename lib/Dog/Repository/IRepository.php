@@ -1,10 +1,12 @@
 <?php
 
+namespace Dog\Repository;
+
 /**
  * Interface defining general behaviors for all Dog repositories, regardless of
  * type.
  */
-interface Dog_Repository_Interface {
+interface IRepository {
 
   /**
    *

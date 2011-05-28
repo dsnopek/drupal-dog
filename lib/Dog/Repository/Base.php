@@ -1,6 +1,8 @@
 <?php
 
-abstract class Dog_Repository_Base implements Dog_Repository_Interface {
+namespace Dog\Repository;
+
+abstract class Base implements IRepository {
 
   public function getCurrentBranch($name_only = TRUE) {
     try {

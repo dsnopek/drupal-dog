@@ -1,12 +1,17 @@
 <?php
 
+namespace Dog\House;
+
+use Dog\Repository;
+use Dog\Sled;
+
 /**
  * Dog's outermost interface. Attaching itself to the base of a Dog instance,
  * the DogHouse acts as a gateway to all services and data in that instance.
  *
  * Acts as a broker, a factory, and a handful of other things, too.
  */
-class Dog_House_Default implements Dog_House_Interface {
+class DefaultHouse implements IHouse {
 
   /**
    *
@@ -26,14 +31,14 @@ class Dog_House_Default implements Dog_House_Interface {
 
   public function __construct($path) {
     $this->path = $path;
-    $this->sled = new Dog_Sled($path);
+    $this->sled = new \Dog\Sled($path);
   }
 
   public function getRepository($path) {
     return isset($this->repositories[$path]) ? $this->repositories[$path] : FALSE;
   }
 
-  public function attachRepository(Dog_Repository_Interface $repository) {
+  public function attachRepository(IRepository $repository) {
 
   }
 

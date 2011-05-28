@@ -1,6 +1,8 @@
 <?php
 
-class Dog_Sled {
+namespace Dog;
+
+class Sled {
 
   /**
    *
@@ -23,7 +25,7 @@ class Dog_Sled {
   protected $buildTarget;
 
   public function __construct($base_path) {
-    $this->sled = new SplFileObject("$base_path/.dog/sled", 'a+');
+    $this->sled = new \SplFileObject("$base_path/.dog/sled", 'a+');
 
     // git config files are *almost* standard ini file format, but the only time
     // a problem ought to show up is if/when an alias has unquoted disallowed
