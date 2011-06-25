@@ -378,7 +378,7 @@ function drush_dog_init($target = '') {
     $version = reset($version);
     $xml = _drush_pm_get_release_history_xml($version);
     $release = pm_parse_release($version, $xml);
-    $upstream_ref = $release['tag'];
+    $upstream_ref = drush_get_option('upstream-ref', $release['tag']);
     $upstream = 'git://git.drupal.org/project/drupal.git';
   }
   else {
