@@ -376,45 +376,50 @@ function dog_autoload($class) {
 */
 
 function drush_dog_init($target = '') {
-  $upstream = drush_get_option('upstream', 'drupal');
+  // Initialize the RepositoryConfig object we'll use to control the new repo.
+  $config = new Dog\Config\RepositoryConfig();
+
+  $config['remote.upstream.url'] = drush_get_option('upstream', 'drupal');
 
   // Force inclusion of download.pm.inc. Ugh.
   drush_include(DRUSH_BASE_PATH . '/commands/pm', 'download.pm');
 
-  if (strpos($upstream, 'drupal') === 0) {
-    $version = pm_parse_project_version(array($upstream));
+  if (strpos($config['remote.upstream.url'], 'drupal') === 0) {
+    $version = pm_parse_project_version(array($config['remote.upstream.url']));
     $version = reset($version);
     $xml = _drush_pm_get_release_history_xml($version);
     $release = _pm_download_parse_release($version, $xml);
-    $upstream_ref = drush_get_option('upstream-ref', $release['tag']);
-    $upstream = 'git://git.drupal.org/project/drupal.git';
+    $config['dog.upstream_ref'] = drush_get_option('upstream-ref', $release['tag']);
+    $config['remote.upstream.url'] = 'http://git.drupal.org/project/drupal.git';
   }
   else {
-    $upstream_ref = drush_get_option('upstream-ref');
-    if (!is_string($upstream_ref)) {
+    $config['dog.upstream_ref'] = drush_get_option('upstream-ref');
+    if (!is_string($config['dog.upstream_ref'])) {
       return drush_set_error('DRUSH_DOG_INVALID_UPSTREAM', dt('An upstream ref must be specified as the starting point for the dog instance.'));
     }
   }
 
-  $target = empty($target) ? preg_replace('/.*\/([\w]*)(\.git)?$/', '\1', $upstream) : $target;
+  $target = $target ?: preg_replace('/.*\/([\w]*)(\.git)?$/', '\1', $config['remote.upstream.url']);
 
   // Normalize target to absolute path
   $realtarget = $target[0] != '/' ? getcwd() . '/' . $target : $target;
+  $config['dog.worktree'] = $realtarget;
+  $config['dog.repopath'] = "$realtarget/.git";
 
   if (file_exists($realtarget)) {
     return drush_set_error('DRUSH_DOG_TARGET_DIRECTORY_EXISTS', dt("Target directory '$realtarget' already exists."));
   }
 
   try {
-    $remoteinfo = _dog_git_invoke('ls-remote ' . drush_escapeshellarg($upstream) . ' 7.0');
+    $remoteinfo = _dog_git_invoke('ls-remote ' . drush_escapeshellarg($config['remote.upstream.url']) . ' 7.0');
   }
   catch (Exception $e) {
-    return drush_set_error('DRUSH_DOG_INVALID_UPSTREAM', dt("Upstream URI '%upstream' is not a Git repository.", array('%upstream' => $upstream)));
+    return drush_set_error('DRUSH_DOG_INVALID_UPSTREAM', dt("Upstream URI '%upstream' is not a Git repository.", array('%upstream' => $config['remote.upstream.url'])));
   }
 
   // Check that the 7.0 tag is the SHA1 we know it should be.
   if (strpos($remoteinfo, '497914920385b7016ac9c9367e0198530787adf2') !== 0) {
-    return drush_set_error('DRUSH_DOG_INVALID_UPSTREAM', dt("Upstream URI '%upstream' is not a valid Drupal core repository.", array('%upstream' => $upstream)));
+    return drush_set_error('DRUSH_DOG_INVALID_UPSTREAM', dt("Upstream URI '%upstream' is not a valid Drupal core repository.", array('%upstream' => $config['remote.upstream.url'])));
   }
 
   // Build the base clone command.
@@ -426,14 +431,12 @@ function drush_dog_init($target = '') {
   }
 
   // add the clone uri and target dir
-  $cmd .= drush_escapeshellarg($upstream);
+  $cmd .= drush_escapeshellarg($config['remote.upstream.url']);
 
   // add the target output dir
-  if (!empty($target)) {
-    $cmd .= ' ' . drush_escapeshellarg($target);
-  }
+  $cmd .= ' ' . drush_escapeshellarg($realtarget);
 
-  drush_log(dt("Cloning '$upstream' into $realtarget."), 'info');
+  drush_log(dt("Cloning '%upstream' into %realtarget.", array('%upstream' => $config['remote.upstream.url'], '%realtarget' => $realtarget)), 'info');
 
   try {
     // Do the clone
@@ -450,11 +453,11 @@ function drush_dog_init($target = '') {
 
   $old = substr(trim(_dog_git_invoke('symbolic-ref HEAD', $realtarget)), 11);
 
-  _dog_git_invoke('checkout -b ' . drush_escapeshellarg($localbranch) . ' ' . drush_escapeshellarg($upstream_ref), $realtarget);
+  _dog_git_invoke('checkout -b ' . drush_escapeshellarg($localbranch) . ' ' . drush_escapeshellarg($config['tmp']['upstream_ref']), $realtarget);
   _dog_git_invoke('branch -D ' . $old, $realtarget);
 
   // Set the collab uri
-  $collab = drush_get_option('collab', $upstream);
+  $collab = drush_get_option('collab', $config['remote.upstream.url']);
   _dog_git_invoke('remote add collab ' . drush_escapeshellarg($collab), $realtarget);
 
   // Init the .dog dir & sled
@@ -473,7 +476,7 @@ function drush_dog_init($target = '') {
 
   $data = array(
     'mainRepo' => array(
-      'upstream' => $upstream,
+      'upstream' => $config['remote.upstream.url'],
       'collab' => $collab,
     ),
   );
