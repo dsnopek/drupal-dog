@@ -374,11 +374,14 @@ function dog_autoload($class) {
 function drush_dog_init($target = '') {
   $upstream = drush_get_option('upstream', 'drupal');
 
+  // Force inclusion of download.pm.inc. Ugh.
+  drush_include(DRUSH_BASE_PATH . '/commands/pm', 'download.pm');
+
   if (strpos($upstream, 'drupal') === 0) {
     $version = pm_parse_project_version(array($upstream));
     $version = reset($version);
     $xml = _drush_pm_get_release_history_xml($version);
-    $release = pm_parse_release($version, $xml);
+    $release = _pm_download_parse_release($version, $xml);
     $upstream_ref = drush_get_option('upstream-ref', $release['tag']);
     $upstream = 'git://git.drupal.org/project/drupal.git';
   }
