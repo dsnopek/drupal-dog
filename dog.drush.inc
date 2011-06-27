@@ -246,9 +246,13 @@ function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_s
       fclose($pipes[2]);
     }
 
+    $return_code = proc_close($process);
+
     if ($return_code != 0 && !$fail_safe) {
       throw new \Exception("Invocation of Git command '" . $command . "' failed with return code " . $return_code .": \n" . $stdout . $stderr);
     }
+
+    return $stdout;
   }
 }
 
