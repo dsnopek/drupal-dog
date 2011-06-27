@@ -42,11 +42,11 @@ class RepositoryConfig implements IConfig {
   // Implementation of ArrayAccess methods
 
   public function offsetExists($offset) {
-    return array_key_exists($this->conf[$offset]);
+    return array_key_exists($offset, $this->conf);
   }
 
   public function offsetGet($offset) {
-    return array_key_exists($this->conf[$offset]) ? $this->conf[$offset] : FALSE;
+    return array_key_exists($offset, $this->conf) ? $this->conf[$offset] : FALSE;
   }
 
   public function offsetSet($offset, $value) {
