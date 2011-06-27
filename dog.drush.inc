@@ -244,6 +244,7 @@ function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_s
       fclose($pipes[1]);
       $stderr = stream_get_contents($pipes[2]);
       fclose($pipes[2]);
+    }
 
     if ($return_code != 0 && !$fail_safe) {
       throw new \Exception("Invocation of Git command '" . $command . "' failed with return code " . $return_code .": \n" . $stdout . $stderr);
@@ -326,7 +327,7 @@ function dog_autoload_init($class) {
       $base_path = $command['path'] . '/lib/';
     }
 
-    $file = $base_path . strtr($class, '_', '/') . '.php';
+    $file = $base_path . strtr($class, '\\', '/') . '.php';
     if (is_file($file)) {
       require $file;
       return TRUE;
