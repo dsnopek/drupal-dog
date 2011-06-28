@@ -69,8 +69,11 @@ interface IRepository {
 
   /**
    * Execute a Git command against this repository.
+   *
+   * This command respects drush's various output & execution control options.
+   * Or at least it should - if it doesn't, file a bug :)
    */
-  public function gitPassthru($command, $exception = FALSE);
+  public function gitPassthru($command, $cwd = NULL, $fail_safe = FALSE, $env = NULL);
 
 //  public function getHookSet();
 //

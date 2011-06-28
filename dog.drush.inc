@@ -399,6 +399,8 @@ function drush_dog_init($target = '') {
     }
   }
 
+  $config['remote.collab.url'] = drush_get_option('collab', $config['remote.upstream.url']);
+
   $target = $target ?: preg_replace('/.*\/([\w]*)(\.git)?$/', '\1', $config['remote.upstream.url']);
 
   // Normalize target to absolute path

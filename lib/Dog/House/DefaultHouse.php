@@ -33,6 +33,10 @@ class DefaultHouse implements IHouse {
     $this->path = $path;
   }
 
+  public function getBasePath() {
+    return $this->path;
+  }
+
   public function getRepository($path) {
     return isset($this->repositories[$path]) ? $this->repositories[$path] : FALSE;
   }

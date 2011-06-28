@@ -15,7 +15,7 @@ class Core extends Base {
     }
 
     try {
-      $remoteinfo = _dog_git_invoke('ls-remote ' . drush_escapeshellarg($this->config['remote.upstream.url']) . ' 7.0');
+      $remoteinfo = $this->gitPassthru('ls-remote ' . drush_escapeshellarg($this->config['remote.upstream.url']) . ' 7.0');
     }
     catch (Exception $e) {
       return drush_set_error('DRUSH_DOG_INVALID_UPSTREAM', dt("Upstream URI '%upstream' is not a Git repository.", array('%upstream' => $this->config['remote.upstream.url'])));
@@ -44,7 +44,7 @@ class Core extends Base {
 
     try {
       // Do the clone
-      _dog_git_invoke($cmd);
+      $this->gitPassthru($cmd);
     }
     catch (Exception $e) {
       return drush_set_error('DRUSH_DOG_GIT_INVOCATION_ERROR', dt("Clone of upstream repository failed."));
@@ -55,14 +55,18 @@ class Core extends Base {
     // Create the appropriate local branch based on the requested start point
     $localbranch = drush_get_option('branch', 'master');
 
-    $old = substr(trim(_dog_git_invoke('symbolic-ref HEAD', $this->config['dog.worktree'])), 11);
+    $old = substr(trim($this->gitPassthru('symbolic-ref HEAD', $this->config['dog.worktree'])), 11);
 
-    _dog_git_invoke('checkout -b ' . drush_escapeshellarg($localbranch) . ' ' . drush_escapeshellarg($this->config['tmp']['upstream_ref']), $this->config['dog.worktree']);
-    _dog_git_invoke('branch -D ' . $old, $this->config['dog.worktree']);
+    $this->gitPassthru('checkout -b ' . drush_escapeshellarg($localbranch) . ' ' . drush_escapeshellarg($this->config['tmp']['upstream_ref']), $this->config['dog.worktree']);
+    $this->gitPassthru('branch -D ' . $old, $this->config['dog.worktree']);
 
-    // Set the collab uri
-    $collab = drush_get_option('collab', $this->config['remote.upstream.url']);
-    _dog_git_invoke('remote add collab ' . drush_escapeshellarg($collab), $this->config['dog.worktree']);
+    // Set up the collab remote, if the URI for it exists
+    if (isset($this->config['remote.collab.url'])) {
+
+    }
+
+    $collab = drush_get_option('collab', $this->config['remote.collab.url']);
+    $this->gitPassthru('remote add collab ' . drush_escapeshellarg($collab), $this->config['dog.worktree']);
 
     // Init the .dog dir & sled
     mkdir($this->config['dog.worktree'] . '/.dog');
@@ -72,8 +76,8 @@ class Core extends Base {
     $libpath = $command['path'] . '/lib/';
     drush_copy_dir($libpath, $this->config['dog.worktree'] . '/.dog/lib');
 
-    _dog_git_invoke('add -f -- .dog/lib', $this->config['dog.worktree']);
-    _dog_git_invoke('commit -m "Add dog class library." -o -- .dog/lib', $this->config['dog.worktree']);
+    $this->gitPassthru('add -f -- .dog/lib', $this->config['dog.worktree']);
+    $this->gitPassthru('commit -m "Add dog class library." -o -- .dog/lib', $this->config['dog.worktree']);
 
     // For now at least, we just manually write a sledfile.
     $sledfile = new \SplFileObject($this->config['dog.worktree'] . '/.dog/sled', 'w+');
@@ -86,8 +90,8 @@ class Core extends Base {
     );
 
     $sledfile->fwrite(json_encode($data));
-    _dog_git_invoke('add -f -- .dog/sled', $this->config['dog.worktree']);
-    _dog_git_invoke('commit -m "Add dog sled manifest file." -o -- .dog/sled', $this->config['dog.worktree']);
+    $this->gitPassthru('add -f -- .dog/sled', $this->config['dog.worktree']);
+    $this->gitPassthru('commit -m "Add dog sled manifest file." -o -- .dog/sled', $this->config['dog.worktree']);
 
     // Init the files dir
     if (!file_exists($this->config['dog.worktree'] . '/sites/default/files')) {
@@ -98,8 +102,8 @@ class Core extends Base {
     $gitignore->fwrite("*\n!.gitignore\n");
 
     // -o -- <filespec> doesn't work on untracked files; have to add it first
-    _dog_git_invoke('add -f -- sites/default/files/.gitignore', $this->config['dog.worktree']);
-    _dog_git_invoke('commit -m "Add sites/default/files with a .gitignore file" -o -- sites/default/files/.gitignore', $this->config['dog.worktree']);
+    $this->gitPassthru('add -f -- sites/default/files/.gitignore', $this->config['dog.worktree']);
+    $this->gitPassthru('commit -m "Add sites/default/files with a .gitignore file" -o -- sites/default/files/.gitignore', $this->config['dog.worktree']);
   }
 }
 
