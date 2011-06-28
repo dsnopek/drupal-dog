@@ -3,6 +3,7 @@
 namespace Dog\Repository;
 
 use Dog\Config\RepositoryConfig;
+use Dog\House\IHouse;
 
 abstract class Base implements IRepository {
 
@@ -41,6 +42,10 @@ abstract class Base implements IRepository {
 
   public function gitPassthru($command, $exception = FALSE) {
     ;
+  }
+
+  public function __toString() {
+    return $this->house->getBasePath() . $this->config['dog.repopath'];
   }
 }
 

@@ -54,11 +54,6 @@ interface IRepository {
    *
    * @var mixed
    */
-  public function getlastStderr();
-
-  public function getlastStdout();
-
-  public function getlastExit();
 
   /**
    * Return the branch currently checked out in this repository.
@@ -77,13 +72,13 @@ interface IRepository {
    */
   public function gitPassthru($command, $exception = FALSE);
 
-  public function getHookSet();
+//  public function getHookSet();
+//
+//  public function setHookSet($name);
 
-  public function setHookSet($name);
-
-  public function getRemoteInfo($name);
-
-  public function setRemoteInfo($name, $info);
+//  public function getRemoteInfo($name);
+//
+//  public function setRemoteInfo($name, $info);
 
   /**
    * Represent this repository object as a string containing the absolute path

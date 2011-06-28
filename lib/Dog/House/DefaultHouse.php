@@ -31,7 +31,6 @@ class DefaultHouse implements IHouse {
 
   public function __construct($path) {
     $this->path = $path;
-    $this->sled = new \Dog\Sled($path);
   }
 
   public function getRepository($path) {
@@ -40,6 +39,13 @@ class DefaultHouse implements IHouse {
 
   public function attachRepository(IRepository $repository) {
 
+  }
+
+  public function getSled() {
+    if (isset($this->sled)) {
+      $this->sled = new \Dog\Sled($this->path);
+    }
+    return $this->sled;
   }
 
   /**

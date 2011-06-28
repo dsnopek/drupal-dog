@@ -410,92 +410,10 @@ function drush_dog_init($target = '') {
     return drush_set_error('DRUSH_DOG_TARGET_DIRECTORY_EXISTS', dt("Target directory '$realtarget' already exists."));
   }
 
-  try {
-    $remoteinfo = _dog_git_invoke('ls-remote ' . drush_escapeshellarg($config['remote.upstream.url']) . ' 7.0');
-  }
-  catch (Exception $e) {
-    return drush_set_error('DRUSH_DOG_INVALID_UPSTREAM', dt("Upstream URI '%upstream' is not a Git repository.", array('%upstream' => $config['remote.upstream.url'])));
-  }
-
-  // Check that the 7.0 tag is the SHA1 we know it should be.
-  if (strpos($remoteinfo, '497914920385b7016ac9c9367e0198530787adf2') !== 0) {
-    return drush_set_error('DRUSH_DOG_INVALID_UPSTREAM', dt("Upstream URI '%upstream' is not a valid Drupal core repository.", array('%upstream' => $config['remote.upstream.url'])));
-  }
-
-  // Build the base clone command.
-  $cmd = 'clone -q -o upstream --no-hardlinks ';
-
-  // Use a refcache if drush has one specified
-  if ($refcache = drush_get_option('git-reference-cache')) {
-    $cmd .= "--reference $refcache ";
-  }
-
-  // add the clone uri and target dir
-  $cmd .= drush_escapeshellarg($config['remote.upstream.url']);
-
-  // add the target output dir
-  $cmd .= ' ' . drush_escapeshellarg($realtarget);
-
-  drush_log(dt("Cloning '%upstream' into %realtarget.", array('%upstream' => $config['remote.upstream.url'], '%realtarget' => $realtarget)), 'info');
-
-  try {
-    // Do the clone
-    _dog_git_invoke($cmd);
-  }
-  catch (Exception $e) {
-    return drush_set_error('DRUSH_DOG_GIT_INVOCATION_ERROR', dt("Clone of upstream repository failed."));
-  }
-
-  drush_log(dt("Successfully initialized a new dog instance in $realtarget."), 'success');
-
-  // Create the appropriate local branch based on the requested start point
-  $localbranch = drush_get_option('branch', 'master');
-
-  $old = substr(trim(_dog_git_invoke('symbolic-ref HEAD', $realtarget)), 11);
-
-  _dog_git_invoke('checkout -b ' . drush_escapeshellarg($localbranch) . ' ' . drush_escapeshellarg($config['tmp']['upstream_ref']), $realtarget);
-  _dog_git_invoke('branch -D ' . $old, $realtarget);
-
-  // Set the collab uri
-  $collab = drush_get_option('collab', $config['remote.upstream.url']);
-  _dog_git_invoke('remote add collab ' . drush_escapeshellarg($collab), $realtarget);
-
-  // Init the .dog dir & sled
-  mkdir($realtarget . '/.dog');
-
-  // Move the dog lib dir into place within the site instance
-  $command = drush_get_command();
-  $libpath = $command['path'] . '/lib/';
-  drush_copy_dir($libpath, "$realtarget/.dog/lib");
-
-  _dog_git_invoke('add -f -- .dog/lib', $realtarget);
-  _dog_git_invoke('commit -m "Add dog class library." -o -- .dog/lib', $realtarget);
-
-  // For now at least, we just manually write a sledfile.
-  $sledfile = new \SplFileObject("$realtarget/.dog/sled", 'w+');
-
-  $data = array(
-    'mainRepo' => array(
-      'upstream' => $config['remote.upstream.url'],
-      'collab' => $collab,
-    ),
-  );
-
-  $sledfile->fwrite(json_encode($data));
-  _dog_git_invoke('add -f -- .dog/sled', $realtarget);
-  _dog_git_invoke('commit -m "Add dog sled manifest file." -o -- .dog/sled', $realtarget);
-
-  // Init the files dir
-  if (!file_exists($realtarget . '/sites/default/files')) {
-    mkdir($realtarget . '/sites/default/files');
-  }
-
-  $gitignore = new \SplFileObject($realtarget . '/sites/default/files/.gitignore', 'w');
-  $gitignore->fwrite("*\n!.gitignore\n");
-
-  // -o -- <filespec> doesn't work on untracked files; have to add it first
-  _dog_git_invoke('add -f -- sites/default/files/.gitignore', $realtarget);
-  _dog_git_invoke('commit -m "Add sites/default/files with a .gitignore file" -o -- sites/default/files/.gitignore', $realtarget);
+  // Pop out a new house rq
+  $house = new Dog\House\DefaultHouse($realtarget);
+  $core = new Dog\Repository\Core($config, $house);
+  $core->create();
 }
 
 function drush_dog_dl() {
@@ -516,7 +434,9 @@ function drush_dog_dl() {
     return drush_set_error(DRUSH_PM_REQUESTED_PROJECT_NOT_FOUND, dt('You must specify at least one project to download.'));
   }
 
-  // TODO disallow core, drush, dog
-
   drush_invoke_args('pm-download', $args);
+}
+
+function drush_dog_vet() {
+  print_r(drush_get_command());
 }
