@@ -1,6 +1,6 @@
 <?php
 
-namespace Dog\House;
+namespace Dog;
 
 use Dog\Repository;
 use Dog\Sled;
@@ -11,7 +11,7 @@ use Dog\Sled;
  *
  * Acts as a broker, a factory, and a handful of other things, too.
  */
-class DefaultHouse implements IHouse {
+class House {
 
   /**
    *
