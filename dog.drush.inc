@@ -287,6 +287,9 @@ function dog_drush_exit() {
 /**
  * Retrieve the top-level object implementing Dog_House_Interface that is used
  * for this dog command, if one exists.
+ *
+ * @return Dog\Face|FALSE
+ *   Return a Dog\Face object, or FALSE if no object is known.
  */
 function dog_get_face() {
   $dog = drush_get_context('dogface');
@@ -354,8 +357,7 @@ function dog_autoload($class) {
       $command = drush_get_command();
 
       $search_paths = array(
-        DRUPAL_ROOT . '/.dog/lib-local/', // local overrides
-        DRUPAL_ROOT . '/.dog/lib/', // classes in dog instance
+        dog_get_face()->getBasePath() . '/.dog/lib/', // classes in dog instance
         $command['path'] . '/lib/', // classes in base dog install
       );
     }
