@@ -305,6 +305,7 @@ function _dog_normal_command() {
   catch (Dog\Exception\BadDog $e) {
     // Running a dog command, but this isn't a dog instance. Whoops.
     drush_set_error('DRUSH_DOG_NOT_A_DOG_INSTANCE', $e->getMessage());
+    return;
   }
 
   drush_set_context('dogface', $dog);
