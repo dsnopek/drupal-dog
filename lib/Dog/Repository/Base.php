@@ -3,7 +3,7 @@
 namespace Dog\Repository;
 
 use Dog\Config\RepositoryConfig;
-use Dog\House\IHouse;
+use Dog\Face;
 
 abstract class Base implements IRepository {
 
@@ -17,13 +17,13 @@ abstract class Base implements IRepository {
 
   /**
    *
-   * @var Dog\House\IHouse
+   * @var Dog\Face
    */
-  protected $house;
+  protected $face;
 
-  public function __construct(RepositoryConfig $config, IHouse $house) {
+  public function __construct(RepositoryConfig $config, Face $face) {
     $this->config = $config;
-    $this->house = $house;
+    $this->face = $face;
   }
 
   public function create() {
@@ -60,7 +60,7 @@ abstract class Base implements IRepository {
     if (NULL === $cwd) {
       // Set the cwd to the working copy path, but only if it exists. This
       // should cover us for the core.worktree AND newly cloning case.
-      $cwd = file_exists($this->config['dog.worktree']) ? $this->config['dog.worktree'] : $this->house->getBasePath();
+      $cwd = file_exists($this->config['dog.worktree']) ? $this->config['dog.worktree'] : $this->face->getBasePath();
     }
 
     if ($env_source === FALSE) {
@@ -109,6 +109,6 @@ abstract class Base implements IRepository {
   }
 
   public function __toString() {
-    return $this->house->getBasePath() . $this->config['dog.repopath'];
+    return $this->face->getBasePath() . $this->config['dog.repopath'];
   }
 }

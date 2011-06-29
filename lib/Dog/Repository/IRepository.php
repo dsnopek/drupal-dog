@@ -3,7 +3,7 @@
 namespace Dog\Repository;
 
 use Dog\Config\RepositoryConfig;
-use Dog\House\IHouse;
+use Dog\Face;
 
 /**
  * Interface defining general behaviors for all Dog repositories, regardless of
@@ -31,15 +31,15 @@ interface IRepository {
    * the sled in the event of an existing resource, or with desired values in
    * the event of a new resource, is the expected pattern throughout dog.
    *
-   * @param RepositoryConfig $config
+   * @param Dog\Config\RepositoryConfig $config
    *   A Dog\Config\Repository object, which implements Dog\Config\IConfig, and
    *   contains all vital configuration information for this repository.
    *
-   * @param IHouse $house
-   *   The object implementing Dog\House\IHouse that is being used to manage
+   * @param Dog\Face $face
+   *   The object implementing Dog\Face that is being used to manage
    *   this Dog instance.
    */
-  public function __construct(RepositoryConfig $config, IHouse $house);
+  public function __construct(RepositoryConfig $config, Face $face);
 
   /**
    * Create a new repository using configuration information already passed in

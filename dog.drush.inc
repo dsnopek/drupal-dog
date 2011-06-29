@@ -271,7 +271,7 @@ function dog_drush_init() {
 }
 
 function dog_drush_exit() {
-  if (!dog_get_house()) {
+  if (!dog_get_face()) {
     return;
   }
 
@@ -288,23 +288,23 @@ function dog_drush_exit() {
  * Retrieve the top-level object implementing Dog_House_Interface that is used
  * for this dog command, if one exists.
  */
-function dog_get_house() {
-  $dog = drush_get_context('doghouse');
-  return $dog instanceof Dog\House\IHouse ? $dog : FALSE;
+function dog_get_face() {
+  $dog = drush_get_context('dogface');
+  return $dog instanceof Dog\Face ? $dog : FALSE;
 }
 
 function _dog_normal_command() {
-  if (!file_exists(DRUPAL_ROOT . "/.dog/sled")) {
-    // Running a dog command, but this isn't a dog instance. Whoops.
-    drush_set_error('DRUSH_DOG_NOT_A_DOG_INSTANCE', "Not in a valid dog instance, cannot execute dog commands.");
-    return;
-  }
-
   spl_autoload_register('dog_autoload');
 
-  $dog = new Dog\House\DefaultHouse(DRUPAL_ROOT);
-  $dog->verify();
-  drush_set_context('doghouse', $dog);
+  try {
+    $face = new Dog\Face(DRUPAL_ROOT);
+  }
+  catch (Dog\Exception\BadDog $e) {
+    // Running a dog command, but this isn't a dog instance. Whoops.
+    drush_set_error('DRUSH_DOG_NOT_A_DOG_INSTANCE', $e->getMessage());
+  }
+
+  drush_set_context('dogface', $dog);
   // call_user_func_array('drush_invoke', array_merge(array($command['command-hook'], $dog), $args));
 
 }
@@ -412,9 +412,9 @@ function drush_dog_init($target = '') {
     return drush_set_error('DRUSH_DOG_TARGET_DIRECTORY_EXISTS', dt("Target directory '$realtarget' already exists."));
   }
 
-  // Pop out a new house rq
-  $house = new Dog\House\DefaultHouse($realtarget);
-  $core = new Dog\Repository\Core($config, $house);
+  // Pop out a new face
+  $face = new Dog\Face($realtarget, TRUE);
+  $core = new Dog\Repository\Core($config, $face);
   $core->create();
 }
 
