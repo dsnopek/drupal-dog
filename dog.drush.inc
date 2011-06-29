@@ -285,8 +285,8 @@ function dog_drush_exit() {
 }
 
 /**
- * Retrieve the top-level object implementing Dog_House_Interface that is used
- * for this dog command, if one exists.
+ * Retrieve the top-level Dog\Face that is used for this dog command, if one
+ * exists.
  *
  * @return Dog\Face|FALSE
  *   Return a Dog\Face object, or FALSE if no object is known.
