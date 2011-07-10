@@ -29,7 +29,7 @@ class Face {
    *
    * @var bool
    */
-  protected $init = FALSE;
+  protected $initMode = FALSE;
 
   /**
    *
@@ -72,11 +72,17 @@ class Face {
    * FIXME the flow here is awkward wrt handling the init case.
    *
    * @param string $suggested_path
+   *   The path that Dog should use when attempting to begin its search for the
+   *   overall Dog root. Defaults to the current working directory.
    * @param bool $init
-   * @return \Dog\Face
+   *   Whether this object needs to operate in initialization mode, wherein
+   *   certain startup steps (e.g., verifying the presence of a sled) are
+   *   skipped. This should be necessary only in cases like dog-init and
+   *   dog-rollout, where no files yet exist to check.
+   *
    */
   public function __construct($suggested_path = NULL, $init = FALSE) {
-    $this->init = $init;
+    $this->initMode = $init;
     if (TRUE === $init) {
       // We are init'ing something new. Go with provided path, or use cwd, and
       // skip all other initialization logic.
@@ -94,6 +100,26 @@ class Face {
 //        throw new BadDog($msg, E_RECOVERABLE_ERROR);
       }
     }
+
+    $this->leaveInitMode();
+  }
+
+  /**
+   * Perform setup and verification routines that ensure this Dog\Face is fully
+   * functional.
+   *
+   * FIXME the naming around the whole "init" and "initMode" thing is confusing
+   *
+   * @return void
+   */
+  public function leaveInitMode() {
+    if ($this->initMode !== TRUE) {
+      return;
+    }
+    $this->initMode = FALSE;
+
+    $this->verify();
+    $this->createPid();
   }
 
   /**
@@ -121,6 +147,7 @@ class Face {
 
     return $this->path;
   }
+
   /**
    * Create a pidfile on disk to ensure only one dog operation runs at a time.
    *
@@ -182,6 +209,11 @@ class Face {
    * Verify that this object represents a valid Dog instance.
    */
   public function verify() {
+    if (!is_writable($this->getBasePath())) {
+      $msg = sprintf("The Dog root path, '%s', is not writable.", $this->getBasePath());
+      throw new \Dog\Exception\BadDog($msg, E_RECOVERABLE_ERROR);
+    }
+
     return TRUE;
   }
 
