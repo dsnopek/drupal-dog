@@ -40,6 +40,16 @@ class Face {
   protected $path;
 
   /**
+   * The path to the pid file.
+   *
+   * We use an on-disk pid to ensure only a single dog process is run at any
+   * given time. This file contains the path to that pid.
+   *
+   * @var string
+   */
+  protected $_pidfile;
+
+  /**
    * A path from which the DogFace should start its search (by climbing upwards
    * towards root) for a valid Dog instance, as indicated by the presence of a
    * sled.
@@ -111,6 +121,47 @@ class Face {
 
     return $this->path;
   }
+  /**
+   * Create a pidfile on disk to ensure only one dog operation runs at a time.
+   *
+   * We stick a timestamp in there to help know if a lock is stale. We prefer
+   * time-based locks over pid-based locks (despite the naming) because of how
+   * common it is to mount Drupal over NFS, where pids become useless.
+   */
+  protected function createPid() {
+    if (NULL !== $this->_pidfile) {
+      return;
+    }
+
+    $pidpath = $this->getBasePath() . '/dog.pid';
+    // Get the lock timeout, defaulting to 30s
+    $lock_timeout = drush_get_option('dog-pid-timeout', 30);
+    $now = time();
+
+    // Check and see if a pidfile already exists.
+    if (file_exists($pidpath)) {
+      list($pid, $time) = split(" ", file_get_contents($pidpath));
+      // If the pidfile is older than the lock timeout, clear it.
+      if ($time + $lock_timeout > $now) {
+        $msg = sprintf('A Dog process is already running; the lock will be cleared in %d seconds.', $now);
+        throw new \Dog\Exception\ConcurrencyException($msg, E_ERROR);
+      }
+      else {
+        unlink($pidpath);
+      }
+    }
+
+    // Even though we're not using the pid in our locking logic, include it
+    // anyway for manual auditing purposes. Hell, it doesn't hurt.
+    file_put_contents($pidpath, getmypid() . " $now");
+    $this->_pidfile = $pidpath;
+  }
+
+  protected function removePid() {
+    if (file_exists($this->_pidfile)) {
+      unlink($this->_pidfile);
+    }
+  }
 
   public function getRepository($path) {
     return isset($this->repositories[$path]) ? $this->repositories[$path] : FALSE;
@@ -134,8 +185,8 @@ class Face {
     return TRUE;
   }
 
-  public static function gitExec() {
-    
+  public function __destruct() {
+    $this->removePid();
   }
 }
 
