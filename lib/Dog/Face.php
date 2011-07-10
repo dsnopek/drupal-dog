@@ -33,7 +33,7 @@ class Face {
 
   /**
    *
-   * @var DogSled
+   * @var \Dog\Sled
    */
   protected $sled;
 
@@ -173,7 +173,7 @@ class Face {
 
   public function getSled() {
     if (isset($this->sled)) {
-      $this->sled = new \Dog\Sled($this->path);
+      $this->sled = new Sled($this->path);
     }
     return $this->sled;
   }
