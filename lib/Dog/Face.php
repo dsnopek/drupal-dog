@@ -199,7 +199,7 @@ class Face {
   }
 
   public function getSled() {
-    if (isset($this->sled)) {
+    if (empty($this->sled)) {
       $this->sled = new Sled($this->path);
     }
     return $this->sled;
