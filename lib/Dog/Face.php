@@ -194,13 +194,15 @@ class Face {
     return isset($this->repositories[$path]) ? $this->repositories[$path] : FALSE;
   }
 
-  public function attachRepository(IRepository $repository) {
+  public function attachNewRepository(IRepository $repository) {
+    $sled = $this->getSled();
 
+    $sled->attachNewRepository($repository);
   }
 
   public function getSled() {
     if (empty($this->sled)) {
-      $this->sled = new Sled($this->path);
+      $this->sled = new Sled($this);
     }
     return $this->sled;
   }
@@ -221,4 +223,3 @@ class Face {
     $this->removePid();
   }
 }
-

@@ -24,7 +24,7 @@ class RepositoryConfig implements IConfig {
 //  public function getWorkTreePath();
 //
 //  public function setWorkTreePath();
-  
+
   /**
    * Ensure that we have at least the basic values required for making a
    * repository operate.
@@ -38,6 +38,8 @@ class RepositoryConfig implements IConfig {
     }
     return TRUE;
   }
+
+  public function getConf();
 
   // Implementation of ArrayAccess methods
 

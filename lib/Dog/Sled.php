@@ -10,9 +10,19 @@ class Sled {
    */
   protected $sled;
 
-  protected $mainRepoConfig;
+  /**
+   * The Dog\Face representing the dog run by this sled.
+   *
+   * @var Dog\Face
+   */
+  protected $face;
 
-  protected $attachedRepoConfigs = array();
+  /**
+   * The full config tree, as contained in the sledfile.
+   * 
+   * @var type
+   */
+  protected $config;
 
   /**
    * The string name of the build target being used by the current dog instance.
@@ -24,22 +34,38 @@ class Sled {
    */
   protected $buildTarget;
 
-  public function __construct($base_path) {
-    $this->sled = new \SplFileObject("$base_path/.dog/sled", 'a+');
+  public function __construct(Face $face) {
+    $this->face = $face;
+    $this->sled = new \SplFileObject($face->getBasePath() . "/.dog/sled", 'a+');
+
+    $this->config = json_decode($this->sled, TRUE);
 
     // git config files are *almost* standard ini file format, but the only time
     // a problem ought to show up is if/when an alias has unquoted disallowed
     // characters. Only aliases have any reason to have such values.
-    $this->mainRepoConfig = parse_ini_file("$base_path/.git/config", TRUE);
-    $this->attachedRepoConfigs = array();
   }
 
+  /**
+   * Retrieves the build target this dog instance is operating against.
+   *
+   * TODO This is kinda more of a stub method, really, as build targeting hasn't
+   * been implemented yet. At all.
+   *
+   * @return string
+   */
   public function getBuildTarget() {
-    if (is_null($this->buildTarget)) {
+    if (NULL === $this->buildTarget) {
       $this->buildTarget = isset($this->mainRepoConfig['dog']['buildTarget']) ? $this->mainRepoConfig['dog']['buildTarget'] : 'default';
     }
 
     return $this->buildTarget;
+  }
+
+  public function attachNewRepository(IRepository $repository) {
+    $config = $repository->getConfig();
+    $type = get_class($repository);
+    $config['dog.repoClass'] = $type;
+    $this->config['repositories'][$config['dog.repopath']] = $config->getConf();
   }
 
   public function dump() {
@@ -50,9 +76,6 @@ class Sled {
   }
 
   public function __toString() {
-    $obj = new stdClass();
-    $obj->mainRepoConfig = $this->mainRepoConfig;
-    $obj->attachedRepoConfigs = $this->attachedRepoConfigs;
-    return json_encode($obj);
+    return json_encode($this->config);
   }
 }

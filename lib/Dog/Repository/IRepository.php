@@ -75,6 +75,13 @@ interface IRepository {
    */
   public function gitPassthru($command, $cwd = NULL, $fail_safe = FALSE, $env = NULL);
 
+  /**
+   * Return the Dog\Config\RepositoryConfig that controls this repository.
+   *
+   * @return Dog\Config\RepositoryConfig
+   */
+  public function getConfig();
+
 //  public function getHookSet();
 //
 //  public function setHookSet($name);
