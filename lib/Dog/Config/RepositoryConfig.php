@@ -39,7 +39,9 @@ class RepositoryConfig implements IConfig {
     return TRUE;
   }
 
-  public function getConf();
+  public function getConf() {
+    return $this->conf;
+  }
 
   // Implementation of ArrayAccess methods
 

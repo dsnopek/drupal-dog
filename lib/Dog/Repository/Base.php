@@ -111,4 +111,8 @@ abstract class Base implements IRepository {
   public function __toString() {
     return $this->face->getBasePath() . $this->config['dog.repopath'];
   }
+
+  public function getConfig() {
+    return $this->config;
+  }
 }
