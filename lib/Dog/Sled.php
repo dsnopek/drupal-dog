@@ -2,6 +2,8 @@
 
 namespace Dog;
 
+use Dog\Repository\IRepository;
+
 class Sled {
 
   /**
@@ -19,7 +21,7 @@ class Sled {
 
   /**
    * The full config tree, as contained in the sledfile.
-   * 
+   *
    * @var type
    */
   protected $config;
