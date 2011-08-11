@@ -36,6 +36,26 @@ class Sled {
    */
   protected $buildTarget;
 
+  /**
+   * Boolean to indicate whether the sled.xml file needs to be rewritten.
+   *
+   * This property is automatically set internally by some methods when they
+   * detect a configuration change that must be written to disk.
+   *
+   * @var bool
+   */
+  protected $_needsWrite = FALSE;
+
+  /**
+   * Indicates whether the Sled needs to write itself to the on-disk sledfile.
+   *
+   * @return bool
+   *   TRUE if a write is necesssary, FALSE if not.
+   */
+  public function needsWrite() {
+    return $this->needsWrite;
+  }
+
   public function __construct(Face $face) {
     $this->face = $face;
     $this->sled = new \SplFileObject($face->getBasePath() . "/.dog/sled", 'a+');
@@ -68,6 +88,8 @@ class Sled {
     $type = get_class($repository);
     $config['dog.repoClass'] = $type;
     $this->config['repositories'][$config['dog.repopath']] = $config->getConf();
+
+    $this->_needsWrite = TRUE;
   }
 
   public function dump() {
