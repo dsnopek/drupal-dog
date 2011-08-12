@@ -60,8 +60,6 @@ class Sled {
     $this->face = $face;
     $this->sled = new \SplFileObject($face->getBasePath() . "/.dog/sled", 'a+');
 
-    $this->config = json_decode($this->sled, TRUE);
-
     // git config files are *almost* standard ini file format, but the only time
     // a problem ought to show up is if/when an alias has unquoted disallowed
     // characters. Only aliases have any reason to have such values.
@@ -99,7 +97,4 @@ class Sled {
     $this->sled->flock(LOCK_UN, TRUE);
   }
 
-  public function __toString() {
-    return json_encode($this->config);
-  }
 }
