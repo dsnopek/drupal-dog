@@ -37,7 +37,7 @@ function package_handler_validate() {
 function package_handler_download_project(&$request, $release) {
   $dog = &dog_get_face();
   // Uses HTTP, ensuring maximum (port) accessibility
-  $repository = 'http://git.drupal.org/project/' . $request['name'] . '.git';
+  $repository = 'git://git.drupal.org/project/' . $request['name'] . '.git';
   $request['repository'] = $repository;
 
   // Need to separate the location of the cache from whether to use (and populate) it.
