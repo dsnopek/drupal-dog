@@ -2,5 +2,5 @@
 
 namespace Dog\Exception;
 
-class ConcurrencyException extends \RuntimeException {}
+class ConcurrencyException extends \RuntimeException implements BadDogInterface {}
 
