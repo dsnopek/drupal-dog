@@ -43,6 +43,30 @@ class RepositoryConfig implements IConfig {
     return $this->conf;
   }
 
+
+  public function writeToXml(\XMLWriter $xml) {
+    $writer = function($xml, $conf) use (&$writer) {
+      foreach ($conf as $key => $value) {
+        if (!is_array($value)) {
+          $xml->writeAttribute($key, $value);
+        }
+        else {
+          $xml->startElement($key);
+          $writer($xml, $value);
+          $xml->endElement();
+        }
+      }
+    };
+
+    $xml->startElement('repository');
+    $writer($xml, $this->conf);
+    $xml->endElement();
+  }
+
+  public function buildFromXml(\SimpleXMLElement $xml) {
+
+  }
+
   // Implementation of ArrayAccess methods
 
   public function offsetExists($offset) {

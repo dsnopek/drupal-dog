@@ -5,7 +5,7 @@ namespace Dog\Repository;
 /**
  * The repository representing the core clone that sits at the heart of every
  * Dog instance.
- * 
+ *
  */
 class Core extends Base {
   public function create() {
@@ -79,17 +79,6 @@ class Core extends Base {
     $this->gitPassthru('add -f -- .dog/lib', $this->config['dog.worktree']);
     $this->gitPassthru('commit -m "Add dog class library." -o -- .dog/lib', $this->config['dog.worktree']);
 
-    // For now at least, we just manually write a sledfile.
-    $sledfile = new \SplFileObject($this->config['dog.worktree'] . '/.dog/sled', 'w+');
-
-    $data = array(
-      'mainRepo' => array(
-        'upstream' => $this->config['remote.upstream.url'],
-        'collab' => $collab,
-      ),
-    );
-
-    $sledfile->fwrite(json_encode($data));
     $this->gitPassthru('add -f -- .dog/sled', $this->config['dog.worktree']);
     $this->gitPassthru('commit -m "Add dog sled manifest file." -o -- .dog/sled', $this->config['dog.worktree']);
 

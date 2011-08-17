@@ -3,6 +3,7 @@
 namespace Dog;
 
 use Dog\Repository\IRepository;
+use Dog\Exception\ConcurrencyException;
 
 class Sled {
 
@@ -25,6 +26,13 @@ class Sled {
    * @var type
    */
   protected $config;
+
+  /**
+   * An array of repository configuration objects, keyed by repository path.
+   *
+   * @var array
+   */
+  protected $repositoryConfigs = array();
 
   /**
    * The string name of the build target being used by the current dog instance.
@@ -58,11 +66,41 @@ class Sled {
 
   public function __construct(Face $face) {
     $this->face = $face;
-    $this->sled = new \SplFileObject($face->getBasePath() . "/.dog/sled", 'a+');
+    $this->sled = new \SplFileObject($face->getBasePath() . "/.dog/sled.xml", 'c+');
 
     // git config files are *almost* standard ini file format, but the only time
     // a problem ought to show up is if/when an alias has unquoted disallowed
     // characters. Only aliases have any reason to have such values.
+  }
+
+  /**
+   * Obtain a shared lock on the sledfile for the purposes of reading.
+   */
+  public function getReadLock() {
+    // Acquire shared lock for reading. This lock is persisted throughout the
+    // life time of this object.
+    $this->sled->flock(LOCK_SH);
+  }
+
+  /**
+   * Obtain an exclusive lock on the sledfile, for the purposes of writing.
+   *
+   * @param bool $exception
+   * @throws Dog\Exception\ConcurrencyException
+   */
+  public function getWriteLock($exception = TRUE) {
+    // Try for an exclusive lock, and cut everything short if we can't get one
+    $this->sled->flock(LOCK_EX | LOCK_NB, $wouldblock); // Note - $wouldblock doesn't work on windoze
+    if ($wouldblock && $exception) {
+      throw new ConcurrencyException("Another process is already holds an exclusive lock (for writing) on the sledfile.", E_USER_ERROR, $previous);
+    }
+  }
+
+  /**
+   * Release all locks held on the sled file.
+   */
+  public function releaseLocks() {
+    $this->sled->flock(LOCK_UN);
   }
 
   /**
@@ -85,16 +123,51 @@ class Sled {
     $config = $repository->getConfig();
     $type = get_class($repository);
     $config['dog.repoClass'] = $type;
-    $this->config['repositories'][$config['dog.repopath']] = $config->getConf();
+    $this->repositoryConfigs[$config['dog.repopath']] = $config;
 
     $this->_needsWrite = TRUE;
   }
 
+  /**
+   * Dump the contained configuration to the sled.xml file on disk.
+   */
   public function dump() {
-    $this->sled->flock(LOCK_EX, TRUE);
+    $this->getWriteLock();
+
+    $xmlstring = $this->generateSledXml();
     $this->sled->ftruncate(0);
-    $this->sled->fwrite($this);
-    $this->sled->flock(LOCK_UN, TRUE);
+    $this->sled->fwrite($xmlstring);
+
+    $this->getReadLock();
   }
 
+  /**
+   * Transform all contained configuration into an XML string, ready to be
+   * written to disk.
+   *
+   * @return string
+   */
+  protected function generateSledXml() {
+    $xml = new \XMLWriter();
+    $xml->openMemory();
+    $xml->setIndent(TRUE);
+    $xml->setIndentString('  ');
+    $xml->startDocument('1.0', 'UTF-8');
+    $xml->startElement('dogsled');
+
+    foreach ($this->repositoryConfigs as $config) {
+      $config->writeToXml($xml);
+    }
+
+    $xml->endElement();
+
+    return $xml->outputMemory(TRUE);
+  }
+
+  public function __destruct() {
+    if ($this->_needsWrite) {
+      $this->dump();
+    }
+    $this->releaseLocks();
+  }
 }

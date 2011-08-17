@@ -23,6 +23,20 @@ interface IConfig extends \ArrayAccess {
    * @return array
    */
   public function getConf();
+
+  /**
+   * Convert the contents of this configuration object into an XML node,
+   * typically for use in writing out the sled file.
+   *
+   * @param \XMLWriter $xml
+   *  An already-in-progress XMLWriter, which expects
+   */
+  public function writeToXml(\XMLWriter $xml);
+
+  /**
+   * Populate this configuration object from a SimpleXMLElement.
+   *
+   * @param \SimpleXMLElement $xml
+   */
+  public function buildFromXml(\SimpleXMLElement $xml);
 }
-
-

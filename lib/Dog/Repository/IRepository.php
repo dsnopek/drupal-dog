@@ -51,11 +51,6 @@ interface IRepository {
   public function create();
 
   /**
-   *
-   * @var mixed
-   */
-
-  /**
    * Return the branch currently checked out in this repository.
    *
    * @param bool $name_only

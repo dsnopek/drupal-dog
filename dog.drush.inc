@@ -419,6 +419,9 @@ function drush_dog_init($target = '') {
   $face = new Dog\Face($realtarget, TRUE);
   $core = new Dog\Repository\Core($config, $face);
   $core->create();
+  // Leave init mode, now that we've got something to write/check to.
+  $face->leaveInitMode();
+  $face->attachNewRepository($core);
 }
 
 function drush_dog_dl() {
