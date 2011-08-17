@@ -60,28 +60,4 @@ class RepositoryConfig implements IConfig {
   public function offsetUnset($offset) {
     unset($this->conf[$offset]);
   }
-
-  // Implementation of Iterator methods
-  // FIXME actuallythese
-
-  public function current() {
-
-  }
-
-  public function next() {
-
-  }
-
-  public function key() {
-
-  }
-
-  public function valid() {
-
-  }
-
-  public function rewind() {
-
-  }
 }
-
