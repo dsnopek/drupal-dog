@@ -43,7 +43,6 @@ class RepositoryConfig implements IConfig {
     return $this->conf;
   }
 
-
   public function writeToXml(\XMLWriter $xml) {
     $writer = function($xml, $conf) use (&$writer) {
       foreach ($conf as $key => $value) {
@@ -73,8 +72,8 @@ class RepositoryConfig implements IConfig {
     return array_key_exists($offset, $this->conf);
   }
 
-  public function offsetGet($offset) {
-    return array_key_exists($offset, $this->conf) ? $this->conf[$offset] : FALSE;
+  public function &offsetGet($offset) {
+    return $this->conf[$offset];
   }
 
   public function offsetSet($offset, $value) {
