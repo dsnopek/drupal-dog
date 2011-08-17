@@ -122,8 +122,8 @@ class Sled {
   public function attachNewRepository(IRepository $repository) {
     $config = $repository->getConfig();
     $type = get_class($repository);
-    $config['dog.repoClass'] = $type;
-    $this->repositoryConfigs[$config['dog.repopath']] = $config;
+    $config['classhandler'] = $type;
+    $this->repositoryConfigs[$config['repopath']] = $config;
 
     $this->_needsWrite = TRUE;
   }

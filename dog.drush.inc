@@ -382,34 +382,34 @@ function drush_dog_init($target = '') {
   // Initialize the RepositoryConfig object we'll use to control the new repo.
   $config = new Dog\Config\RepositoryConfig();
 
-  $config['remote.upstream.url'] = drush_get_option('upstream', 'drupal');
+  $config['git']['remote.upstream.url'] = drush_get_option('upstream', 'drupal');
 
   // Force inclusion of download.pm.inc. Ugh.
   drush_include(DRUSH_BASE_PATH . '/commands/pm', 'download.pm');
 
-  if (strpos($config['remote.upstream.url'], 'drupal') === 0) {
-    $version = pm_parse_project_version(array($config['remote.upstream.url']));
+  if (strpos($config['git']['remote.upstream.url'], 'drupal') === 0) {
+    $version = pm_parse_project_version(array($config['git']['remote.upstream.url']));
     $version = reset($version);
     $xml = _drush_pm_get_release_history_xml($version);
     $release = _pm_download_parse_release($version, $xml);
-    $config['dog.upstream_ref'] = drush_get_option('upstream-ref', $release['tag']);
-    $config['remote.upstream.url'] = 'http://git.drupal.org/project/drupal.git';
+    $config['upstream_ref'] = drush_get_option('upstream-ref', $release['tag']);
+    $config['git']['remote.upstream.url'] = 'git://git.drupal.org/project/drupal.git';
   }
   else {
-    $config['dog.upstream_ref'] = drush_get_option('upstream-ref');
-    if (!is_string($config['dog.upstream_ref'])) {
+    $config['upstream_ref'] = drush_get_option('upstream-ref');
+    if (!is_string($config['upstream_ref'])) {
       return drush_set_error('DRUSH_DOG_INVALID_UPSTREAM', dt('An upstream ref must be specified as the starting point for the dog instance.'));
     }
   }
 
-  $config['remote.collab.url'] = drush_get_option('collab', $config['remote.upstream.url']);
+  $config['git']['remote.collab.url'] = drush_get_option('collab', $config['git']['remote.upstream.url']);
 
-  $target = $target ?: preg_replace('/.*\/([\w]*)(\.git)?$/', '\1', $config['remote.upstream.url']);
+  $target = $target ?: preg_replace('/.*\/([\w]*)(\.git)?$/', '\1', $config['git']['remote.upstream.url']);
 
   // Normalize target to absolute path
   $realtarget = $target[0] != '/' ? getcwd() . '/' . $target : $target;
-  $config['dog.worktree'] = $realtarget;
-  $config['dog.repopath'] = "$realtarget/.git";
+  $config['worktree'] = $realtarget;
+  $config['repopath'] = "$realtarget/.git";
 
   if (file_exists($realtarget)) {
     return drush_set_error('DRUSH_DOG_TARGET_DIRECTORY_EXISTS', dt("Target directory '$realtarget' already exists."));

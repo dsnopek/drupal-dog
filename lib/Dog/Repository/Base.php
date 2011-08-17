@@ -60,7 +60,7 @@ abstract class Base implements IRepository {
     if (NULL === $cwd) {
       // Set the cwd to the working copy path, but only if it exists. This
       // should cover us for the core.worktree AND newly cloning case.
-      $cwd = file_exists($this->config['dog.worktree']) ? $this->config['dog.worktree'] : $this->face->getBasePath();
+      $cwd = file_exists($this->config['worktree']) ? $this->config['worktree'] : $this->face->getBasePath();
     }
 
     if ($env_source === FALSE) {
@@ -75,8 +75,8 @@ abstract class Base implements IRepository {
       }
     }
 
-    if ($this->config['dog.repopath']) {
-      $env['GIT_DIR'] = $this->config['dog.repopath'];
+    if ($this->config['repopath']) {
+      $env['GIT_DIR'] = $this->config['repopath'];
     }
 
     $descriptor_spec = array(
@@ -109,7 +109,7 @@ abstract class Base implements IRepository {
   }
 
   public function __toString() {
-    return $this->face->getBasePath() . $this->config['dog.repopath'];
+    return $this->face->getBasePath() . $this->config['repopath'];
   }
 
   public function getConfig() {

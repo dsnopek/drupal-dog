@@ -6,6 +6,8 @@ namespace Dog\Config;
  * A configuration object that is used by Dog\Repository\IRepository objects.
  *
  */
+use Dog\Exception\MissingConfigurationException;
+
 class RepositoryConfig implements IConfig {
   protected $conf = array();
 
@@ -30,10 +32,14 @@ class RepositoryConfig implements IConfig {
    * repository operate.
    */
   public function ensure() {
-    foreach (array('dog.worktree', 'dog.repopath', 'dog.upstream_ref', 'remote.upstream.url') as $item) {
+    foreach (array('worktree', 'repopath', 'upstream_ref') as $item) {
       if (!isset($this->conf[$item])) {
-        // TODO replace with exceptions
-        return FALSE;
+        throw new MissingConfigurationException('Missing a required Dog-specific configuration key for using a repository.', E_RECOVERABLE_ERROR, NULL, $item);
+      }
+    }
+    foreach (array('remote.upstream.url') as $item) {
+      if (!isset($this->conf['git'][$item])) {
+        throw new MissingConfigurationException('Missing a required git-internal configuration key for using a repository.', E_RECOVERABLE_ERROR, NULL, $item);
       }
     }
     return TRUE;
@@ -44,16 +50,22 @@ class RepositoryConfig implements IConfig {
   }
 
   public function writeToXml(\XMLWriter $xml) {
-    $writer = function($xml, $conf) use (&$writer) {
+    $writer = function(&$xml, $conf) use (&$writer) {
+      // have to defer writing elements until after attributes - stupid stupid
+      // see http://us2.php.net/manual/en/function.xmlwriter-write-attribute.php#103498
+      $deferred = array();
       foreach ($conf as $key => $value) {
         if (!is_array($value)) {
           $xml->writeAttribute($key, $value);
         }
         else {
-          $xml->startElement($key);
-          $writer($xml, $value);
-          $xml->endElement();
+          $deferred[$key] = $value;
         }
+      }
+      foreach ($deferred as $key => $value) {
+        $xml->startElement($key);
+        $writer($xml, $value);
+        $xml->endElement();
       }
     };
 
