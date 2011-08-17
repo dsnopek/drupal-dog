@@ -101,7 +101,7 @@ abstract class Base implements IRepository {
       $return_code = proc_close($process);
 
       if ($return_code != 0 && !$fail_safe) {
-        throw new \Exception(sprintf("Invocation of Git command '%s' failed with return code %d:\n%s\n\n%s\n\n"), $command, $return_code, $stdout, $stderr);
+        throw new \Exception(sprintf("Invocation of Git command '%s' failed with return code %d:\n%s\n\n%s\n\n", $command, $return_code, $stdout, $stderr), E_RECOVERABLE_ERROR);
       }
 
       return $stdout;
