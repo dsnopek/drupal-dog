@@ -75,7 +75,6 @@ function drush_dog_init($target = '') {
   $core->create();
 
   // Initialize the sledfile
-  mkdir($config['worktree'] . '/.dog');
   $xml = new XmlWriter();
   $xml->openUri($config['worktree'] . '/.dog/sled.xml');
   $xml->setIndent(TRUE);
