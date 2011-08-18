@@ -301,7 +301,6 @@ function _dog_normal_command() {
 
   try {
     $face = new Dog\Face(DRUPAL_ROOT);
-    $face->leaveInitMode();
   }
   catch (Dog\Exception\BadDog $e) {
     // Running a dog command, but this isn't a dog instance. Whoops.
@@ -309,7 +308,7 @@ function _dog_normal_command() {
     return;
   }
 
-  drush_set_context('dogface', $dog);
+  drush_set_context('dogface', $face);
 }
 
 /**

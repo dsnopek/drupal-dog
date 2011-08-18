@@ -89,7 +89,10 @@ class Face {
       return $this->path = $suggested_path ?: getcwd();
     }
 
-    if (NULL === $suggested_path) {
+    if (NULL !== $suggested_path) {
+      $this->suggestedPath = $suggested_path;
+    }
+    else {
       // No path is provided. Try to suss our way out to the Dog root.
       if (defined('DRUPAL_ROOT')) {
         $this->suggestedPath = DRUPAL_ROOT;
@@ -101,7 +104,8 @@ class Face {
       }
     }
 
-    $this->leaveInitMode();
+    $this->verify();
+    $this->createPid();
   }
 
   /**
@@ -140,7 +144,7 @@ class Face {
       }
 
       if (FALSE === $found) {
-        $msg = sprintf('No valid Dog instance could be found when climbing up towards root from %s.', $suggested_path);
+        $msg = sprintf('No valid Dog instance could be found when climbing up towards root from %s.', $this->suggestedPath);
         throw new BadDog($msg, E_RECOVERABLE_ERROR);
       }
     }
