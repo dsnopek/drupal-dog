@@ -301,6 +301,7 @@ function _dog_normal_command() {
 
   try {
     $face = new Dog\Face(DRUPAL_ROOT);
+    $face->leaveInitMode();
   }
   catch (Dog\Exception\BadDog $e) {
     // Running a dog command, but this isn't a dog instance. Whoops.
@@ -309,8 +310,6 @@ function _dog_normal_command() {
   }
 
   drush_set_context('dogface', $dog);
-  // call_user_func_array('drush_invoke', array_merge(array($command['command-hook'], $dog), $args));
-
 }
 
 /**
@@ -358,7 +357,7 @@ function dog_autoload($class) {
       $command = drush_get_command();
 
       $search_paths = array(
-        dog_get_face()->getBasePath() . '/.dog/lib/', // classes in dog instance
+        drush_get_context('DRUSH_DRUPAL_ROOT') . '/.dog/lib/', // classes in dog instance
         $command['path'] . '/lib/', // classes in base dog install
       );
     }
