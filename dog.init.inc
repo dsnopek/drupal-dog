@@ -73,6 +73,17 @@ function drush_dog_init($target = '') {
   $face = new Dog\Face($realtarget, TRUE);
   $core = new Dog\Repository\Core($config, $face);
   $core->create();
+
+  // Initialize the sledfile
+  mkdir($config['worktree'] . '/.dog');
+  $xml = new XmlWriter();
+  $xml->openUri($config['worktree'] . '/.dog/sled.xml');
+  $xml->setIndent(TRUE);
+  $xml->setIndentString('  ');
+  $xml->startDocument('1.0', 'UTF-8');
+  $xml->writeElement('dogsled');
+  $xml->flush();
+
   // Leave init mode, now that we've got something to write/check to.
   $face->leaveInitMode();
   $face->attachNewRepository($core);
