@@ -51,21 +51,15 @@ class RepositoryConfig implements IConfig {
 
   public function writeToXml(\XMLWriter $xml) {
     $writer = function(&$xml, $conf) use (&$writer) {
-      // have to defer writing elements until after attributes - stupid stupid
-      // see http://us2.php.net/manual/en/function.xmlwriter-write-attribute.php#103498
-      $deferred = array();
       foreach ($conf as $key => $value) {
         if (!is_array($value)) {
-          $xml->writeAttribute($key, $value);
+          $xml->writeElement($key, $value);
         }
         else {
-          $deferred[$key] = $value;
+          $xml->startElement($key);
+          $writer($xml, $value);
+          $xml->endElement();
         }
-      }
-      foreach ($deferred as $key => $value) {
-        $xml->startElement($key);
-        $writer($xml, $value);
-        $xml->endElement();
       }
     };
 
