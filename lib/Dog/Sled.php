@@ -139,6 +139,7 @@ class Sled {
     $this->sled->fwrite($xmlstring);
 
     $this->getReadLock();
+    $this->_needsWrite = FALSE;
   }
 
   /**
