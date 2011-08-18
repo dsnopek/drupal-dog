@@ -92,7 +92,7 @@ class Sled {
     // Try for an exclusive lock, and cut everything short if we can't get one
     $this->sled->flock(LOCK_EX | LOCK_NB, $wouldblock); // Note - $wouldblock doesn't work on windoze
     if ($wouldblock && $exception) {
-      throw new ConcurrencyException("Another process is already holds an exclusive lock (for writing) on the sledfile.", E_USER_ERROR, $previous);
+      throw new ConcurrencyException("Another process already holds an exclusive lock (for writing) on the sledfile.", E_USER_ERROR, $previous);
     }
   }
 
