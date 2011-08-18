@@ -316,7 +316,7 @@ function _dog_normal_command() {
  * Run any preparation/setup necessary for dog init commands.
  */
 function _dog_init_command() {
-  require_once __FILE__ . '/dog.init.inc';
+  require_once __DIR__ . '/dog.init.inc';
   spl_autoload_register('dog_autoload_init');
   // Prep run for init commands
 }
