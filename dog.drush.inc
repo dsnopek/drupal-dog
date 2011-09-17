@@ -171,7 +171,7 @@ function _dog_verify_git() {
   try {
     $version = substr(trim(_dog_git_invoke('version')), 12);
   }
-  catch (Exception $e) {
+  catch (Dog\Exception\GitRuntimeException $e) {
     $git_path = drush_get_option('git-path', 'git');
     if ($git_path === 'git') {
       drush_set_error('DRUSH_DOG_NO_GIT_BINARY', dt("No valid Git binary could be found on the PATH."), 'error');
@@ -249,7 +249,7 @@ function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_s
     $return_code = proc_close($process);
 
     if ($return_code != 0 && !$fail_safe) {
-      throw new \Exception("Invocation of Git command '" . $command . "' failed with return code " . $return_code .": \n" . $stdout . $stderr);
+      throw new Dog\Exception\GitRuntimeException("Invocation of Git command '" . $command . "' failed with return code " . $return_code .": \n" . $stdout . $stderr);
     }
 
     return $stdout;
@@ -271,7 +271,7 @@ function dog_drush_init() {
 }
 
 function dog_drush_exit() {
-  if (!dog_get_house()) {
+  if (!dog_get_face()) {
     return;
   }
 
@@ -285,58 +285,39 @@ function dog_drush_exit() {
 }
 
 /**
- * Retrieve the top-level object implementing Dog_House_Interface that is used
- * for this dog command, if one exists.
+ * Retrieve the top-level Dog\Face that is used for this dog command, if one
+ * exists.
+ *
+ * @return Dog\Face|FALSE
+ *   Return a Dog\Face object, or FALSE if no object is known.
  */
-function dog_get_house() {
-  $dog = drush_get_context('doghouse');
-  return $dog instanceof Dog\House\IHouse ? $dog : FALSE;
+function dog_get_face() {
+  $dog = drush_get_context('dogface');
+  return $dog instanceof Dog\Face ? $dog : FALSE;
 }
 
 function _dog_normal_command() {
-  if (!file_exists(DRUPAL_ROOT . "/.dog/sled")) {
+  spl_autoload_register('dog_autoload');
+
+  try {
+    $face = new Dog\Face(DRUPAL_ROOT);
+  }
+  catch (Dog\Exception\BadDog $e) {
     // Running a dog command, but this isn't a dog instance. Whoops.
-    drush_set_error('DRUSH_DOG_NOT_A_DOG_INSTANCE', "Not in a valid dog instance, cannot execute dog commands.");
+    drush_set_error('DRUSH_DOG_NOT_A_DOG_INSTANCE', $e->getMessage());
     return;
   }
 
-  spl_autoload_register('dog_autoload');
-
-  $dog = new Dog\House\DefaultHouse(DRUPAL_ROOT);
-  $dog->verify();
-  drush_set_context('doghouse', $dog);
-  // call_user_func_array('drush_invoke', array_merge(array($command['command-hook'], $dog), $args));
-
+  drush_set_context('dogface', $face);
 }
 
 /**
  * Run any preparation/setup necessary for dog init commands.
  */
 function _dog_init_command() {
+  require_once __DIR__ . '/dog.init.inc';
   spl_autoload_register('dog_autoload_init');
   // Prep run for init commands
-}
-
-/**
- * Autoloader for initialization (init & rollout) dog commands.
- *
- */
-function dog_autoload_init($class) {
-  static $base_path;
-
-  // Only take action if searching for a dog class.
-  if (strpos($class, 'Dog\\') === 0) {
-    if (is_null($base_path)) {
-      $command = drush_get_command();
-      $base_path = $command['path'] . '/lib/';
-    }
-
-    $file = $base_path . strtr($class, '\\', '/') . '.php';
-    if (is_file($file)) {
-      require $file;
-      return TRUE;
-    }
-  }
 }
 
 /**
@@ -354,8 +335,7 @@ function dog_autoload($class) {
       $command = drush_get_command();
 
       $search_paths = array(
-        DRUPAL_ROOT . '/.dog/lib-local/', // local overrides
-        DRUPAL_ROOT . '/.dog/lib/', // classes in dog instance
+        drush_get_context('DRUSH_DRUPAL_ROOT') . '/.dog/lib/', // classes in dog instance
         $command['path'] . '/lib/', // classes in base dog install
       );
     }
@@ -375,126 +355,6 @@ function dog_autoload($class) {
 * Dog command callbacks
 */
 
-function drush_dog_init($target = '') {
-  $upstream = drush_get_option('upstream', 'drupal');
-
-  // Force inclusion of download.pm.inc. Ugh.
-  drush_include(DRUSH_BASE_PATH . '/commands/pm', 'download.pm');
-
-  if (strpos($upstream, 'drupal') === 0) {
-    $version = pm_parse_project_version(array($upstream));
-    $version = reset($version);
-    $xml = _drush_pm_get_release_history_xml($version);
-    $release = _pm_download_parse_release($version, $xml);
-    $upstream_ref = drush_get_option('upstream-ref', $release['tag']);
-    $upstream = 'git://git.drupal.org/project/drupal.git';
-  }
-  else {
-    $upstream_ref = drush_get_option('upstream-ref');
-    if (!is_string($upstream_ref)) {
-      return drush_set_error('DRUSH_DOG_INVALID_UPSTREAM', dt('An upstream ref must be specified as the starting point for the dog instance.'));
-    }
-  }
-
-  $target = empty($target) ? preg_replace('/.*\/([\w]*)(\.git)?$/', '\1', $upstream) : $target;
-
-  // Normalize target to absolute path
-  $realtarget = $target[0] != '/' ? getcwd() . '/' . $target : $target;
-
-  if (file_exists($realtarget)) {
-    return drush_set_error('DRUSH_DOG_TARGET_DIRECTORY_EXISTS', dt("Target directory '$realtarget' already exists."));
-  }
-
-  try {
-    $remoteinfo = _dog_git_invoke('ls-remote ' . drush_escapeshellarg($upstream) . ' 7.0');
-  }
-  catch (Exception $e) {
-    return drush_set_error('DRUSH_DOG_INVALID_UPSTREAM', dt("Upstream URI '%upstream' is not a Git repository.", array('%upstream' => $upstream)));
-  }
-
-  // Check that the 7.0 tag is the SHA1 we know it should be.
-  if (strpos($remoteinfo, '497914920385b7016ac9c9367e0198530787adf2') !== 0) {
-    return drush_set_error('DRUSH_DOG_INVALID_UPSTREAM', dt("Upstream URI '%upstream' is not a valid Drupal core repository.", array('%upstream' => $upstream)));
-  }
-
-  // Build the base clone command.
-  $cmd = 'clone -q -o upstream --no-hardlinks ';
-
-  // Use a refcache if drush has one specified
-  if ($refcache = drush_get_option('git-reference-cache')) {
-    $cmd .= "--reference $refcache ";
-  }
-
-  // add the clone uri and target dir
-  $cmd .= drush_escapeshellarg($upstream);
-
-  // add the target output dir
-  if (!empty($target)) {
-    $cmd .= ' ' . drush_escapeshellarg($target);
-  }
-
-  drush_log(dt("Cloning '$upstream' into $realtarget."), 'info');
-
-  try {
-    // Do the clone
-    _dog_git_invoke($cmd);
-  }
-  catch (Exception $e) {
-    return drush_set_error('DRUSH_DOG_GIT_INVOCATION_ERROR', dt("Clone of upstream repository failed."));
-  }
-
-  drush_log(dt("Successfully initialized a new dog instance in $realtarget."), 'success');
-
-  // Create the appropriate local branch based on the requested start point
-  $localbranch = drush_get_option('branch', 'master');
-
-  $old = substr(trim(_dog_git_invoke('symbolic-ref HEAD', $realtarget)), 11);
-
-  _dog_git_invoke('checkout -b ' . drush_escapeshellarg($localbranch) . ' ' . drush_escapeshellarg($upstream_ref), $realtarget);
-  _dog_git_invoke('branch -D ' . $old, $realtarget);
-
-  // Set the collab uri
-  $collab = drush_get_option('collab', $upstream);
-  _dog_git_invoke('remote add collab ' . drush_escapeshellarg($collab), $realtarget);
-
-  // Init the .dog dir & sled
-  mkdir($realtarget . '/.dog');
-
-  // Move the dog lib dir into place within the site instance
-  $command = drush_get_command();
-  $libpath = $command['path'] . '/lib/';
-  drush_copy_dir($libpath, "$realtarget/.dog/lib");
-
-  _dog_git_invoke('add -f -- .dog/lib', $realtarget);
-  _dog_git_invoke('commit -m "Add dog class library." -o -- .dog/lib', $realtarget);
-
-  // For now at least, we just manually write a sledfile.
-  $sledfile = new \SplFileObject("$realtarget/.dog/sled", 'w+');
-
-  $data = array(
-    'mainRepo' => array(
-      'upstream' => $upstream,
-      'collab' => $collab,
-    ),
-  );
-
-  $sledfile->fwrite(json_encode($data));
-  _dog_git_invoke('add -f -- .dog/sled', $realtarget);
-  _dog_git_invoke('commit -m "Add dog sled manifest file." -o -- .dog/sled', $realtarget);
-
-  // Init the files dir
-  if (!file_exists($realtarget . '/sites/default/files')) {
-    mkdir($realtarget . '/sites/default/files');
-  }
-
-  $gitignore = new \SplFileObject($realtarget . '/sites/default/files/.gitignore', 'w');
-  $gitignore->fwrite("*\n!.gitignore\n");
-
-  // -o -- <filespec> doesn't work on untracked files; have to add it first
-  _dog_git_invoke('add -f -- sites/default/files/.gitignore', $realtarget);
-  _dog_git_invoke('commit -m "Add sites/default/files with a .gitignore file" -o -- sites/default/files/.gitignore', $realtarget);
-}
-
 function drush_dog_dl() {
   // First ensure we have a clean working copy
   if (_dog_git_invoke('status -s --untracked-files=no', DRUPAL_ROOT)) {
@@ -513,7 +373,9 @@ function drush_dog_dl() {
     return drush_set_error(DRUSH_PM_REQUESTED_PROJECT_NOT_FOUND, dt('You must specify at least one project to download.'));
   }
 
-  // TODO disallow core, drush, dog
-
   drush_invoke_args('pm-download', $args);
+}
+
+function drush_dog_vet() {
+  print_r(drush_get_command());
 }

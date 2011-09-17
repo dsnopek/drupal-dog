@@ -14,7 +14,7 @@
  *  - We are in a valid dog-managed instance.
  */
 function package_handler_validate() {
-  if (!dog_get_house()) {
+  if (!dog_get_face()) {
     drush_set_error('DRUSH_DOG_NOT_A_DOG_INSTANCE', "Not in a valid dog instance, cannot use the dog package handler..");
   }
 
@@ -35,9 +35,9 @@ function package_handler_validate() {
  *   The release details array from drupal.org.
  */
 function package_handler_download_project(&$request, $release) {
-  $dog = &dog_get_house();
+  $dog = &dog_get_face();
   // Uses HTTP, ensuring maximum (port) accessibility
-  $repository = 'http://git.drupal.org/project/' . $request['name'] . '.git';
+  $repository = 'git://git.drupal.org/project/' . $request['name'] . '.git';
   $request['repository'] = $repository;
 
   // Need to separate the location of the cache from whether to use (and populate) it.
@@ -104,7 +104,7 @@ function package_handler_download_project(&$request, $release) {
  *   The release details array from drupal.org.
  */
 function package_handler_update_project($request, $release) {
-  $dog = &dog_get_house();
+  $dog = &dog_get_face();
   // FIXME this needs to actually get implemented, once we're on to the dog updating commands
 }
 
@@ -116,7 +116,7 @@ function package_handler_update_project($request, $release) {
  * sledfile.
  */
 function package_handler_post_download($project) {
-  $dog = &dog_get_house();
+  $dog = &dog_get_face();
   // Obtain the superproject path, then add as submodule.
   $parent_path = trim(_dog_git_invoke('rev-parse --show-toplevel', dirname($project['full_project_path'])));
   $cmd = 'submodule add ';
