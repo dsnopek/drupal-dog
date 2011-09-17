@@ -38,5 +38,5 @@ interface IConfig extends \ArrayAccess {
    *
    * @param \SimpleXMLElement $xml
    */
-  public function buildFromXml(\SimpleXMLElement $xml);
+  public function buildFromXml(\SimpleXMLIterator $xml);
 }

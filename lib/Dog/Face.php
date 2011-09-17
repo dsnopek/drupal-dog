@@ -217,8 +217,11 @@ class Face {
   public function verify() {
     if (!is_writable($this->getBasePath())) {
       $msg = sprintf("The Dog root path, '%s', is not writable.", $this->getBasePath());
-      throw new \Dog\Exception\BadDog($msg, E_RECOVERABLE_ERROR);
+      throw new BadDog($msg, E_RECOVERABLE_ERROR);
     }
+
+    // Make sure the sled works.
+    $this->getSled();
 
     return TRUE;
   }

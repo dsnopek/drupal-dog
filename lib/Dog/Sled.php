@@ -4,14 +4,23 @@ namespace Dog;
 
 use Dog\Repository\IRepository;
 use Dog\Exception\ConcurrencyException;
+use Dog\Config\RepositoryConfig;
 
 class Sled {
 
   /**
    *
-   * @var SplFileObject
+   * @var \SplFileObject
    */
   protected $sled;
+
+  /**
+   * The SimpleXMLIterator object represents the contents of the sled as it was
+   * read in initially.
+   *
+   * @var \SimpleXMLIterator
+   */
+  protected $sledXml;
 
   /**
    * The Dog\Face representing the dog run by this sled.
@@ -68,9 +77,28 @@ class Sled {
     $this->face = $face;
     $this->sled = new \SplFileObject($face->getBasePath() . "/.dog/sled.xml", 'c+');
 
+    $this->getReadLock();
+    $this->sledXml = simplexml_load_file($this->sled, '\\SimpleXMLIterator');
+    $this->readInConfig();
+
     // git config files are *almost* standard ini file format, but the only time
     // a problem ought to show up is if/when an alias has unquoted disallowed
     // characters. Only aliases have any reason to have such values.
+  }
+
+  /**
+   * Read the config in from the sled.xml file and transform it into the form in
+   * which we actually need/use it.
+   *
+   */
+  protected function readInConfig() {
+    // Start with repositories
+    foreach ($this->sledXml->xpath('repository') as $xml) {
+      $repoconfig = new RepositoryConfig();
+      $repoconfig->buildFromXml($xml);
+      // TODO May have some pains depending on which path (repo v. worktree) we key on. repo path for now
+      $this->repositoryConfigs[$repoconfig['repopath']] = $repoconfig;
+    }
   }
 
   /**

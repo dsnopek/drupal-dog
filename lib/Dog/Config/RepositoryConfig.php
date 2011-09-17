@@ -68,8 +68,21 @@ class RepositoryConfig implements IConfig {
     $xml->endElement();
   }
 
-  public function buildFromXml(\SimpleXMLElement $xml) {
+  public function buildFromXml(\SimpleXMLIterator $xml) {
+    $build = function(\SimpleXMLIterator &$xml) use (&$build) {
+      $conf = array();
+      foreach ($xml as $key => $value) {
+        if ($value->hasChildren()) {
+          $conf[$key] = $build($xml);
+        }
+        else {
+          $conf[$key] = strval($value);
+        }
+      }
+      return $conf;
+    };
 
+    $this->conf = $build($xml);
   }
 
   // Implementation of ArrayAccess methods
