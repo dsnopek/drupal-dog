@@ -77,6 +77,17 @@ interface RepositoryInterface {
    */
   public function getConfig();
 
+    /**
+   * Stage and commit all changes in this repository.
+   *
+   * @param string $message
+   *   The commit message to use for this commit.
+   * @param bool $include_untracked
+   *   Whether or not to include untracked files in the commit. Defaults to
+   *   FALSE.
+   */
+  public function commitAll($message, $include_untracked = FALSE);
+
 //  public function getHookSet();
 //
 //  public function setHookSet($name);

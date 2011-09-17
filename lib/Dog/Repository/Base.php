@@ -109,6 +109,15 @@ abstract class Base implements RepositoryInterface {
     }
   }
 
+  public function commitAll($message, $include_untracked = FALSE) {
+    if ($include_untracked) {
+      $this->gitPassthru('add -A .');
+    }
+
+    // TODO will this do the right string escaping? ugh
+    $this->gitPassthru('commit -m"' . escapeshellarg($message) . '"');
+  }
+
   public function __toString() {
     return $this->face->getBasePath() . $this->config['repopath'];
   }
