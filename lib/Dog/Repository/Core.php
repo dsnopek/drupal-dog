@@ -2,6 +2,8 @@
 
 namespace Dog\Repository;
 
+use Dog\Exception\GitRuntimeException;
+
 /**
  * The repository representing the core clone that sits at the heart of every
  * Dog instance.
@@ -9,15 +11,13 @@ namespace Dog\Repository;
  */
 class Core extends Base {
   public function create() {
-    if (!$this->config->ensure()) {
-      drush_set_error('DRUSH_DOG_MISSING_DATA', dt("Repository configuration object is missing some vital data."));
-      return FALSE;
-    }
+    // Let the base class do its shared prep work.
+    parent::create();
 
     try {
       $remoteinfo = $this->gitPassthru('ls-remote ' . drush_escapeshellarg($this->config['git']['remote.upstream.url']) . ' 7.0');
     }
-    catch (Exception $e) {
+    catch (GitRuntimeException $e) {
       return drush_set_error('DRUSH_DOG_INVALID_UPSTREAM', dt("Upstream URI '%upstream' is not a Git repository.", array('%upstream' => $this->config['git']['remote.upstream.url'])));
     }
 

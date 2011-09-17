@@ -4,6 +4,7 @@ namespace Dog\Repository;
 
 use Dog\Config\RepositoryConfig;
 use Dog\Face;
+use Dog\Exception\GitRuntimeException;
 
 abstract class Base implements RepositoryInterface {
 
@@ -35,7 +36,7 @@ abstract class Base implements RepositoryInterface {
       $current = trim($this->gitPassthru('symbolic-ref -q HEAD', TRUE));
       return $name_only ? substr($current, 12): $current;
     }
-    catch (Exception $e) {
+    catch (GitRuntimeException $e) {
       return FALSE;
     }
   }
@@ -101,7 +102,7 @@ abstract class Base implements RepositoryInterface {
       $return_code = proc_close($process);
 
       if ($return_code != 0 && !$fail_safe) {
-        throw new \Exception(sprintf("Invocation of Git command '%s' failed with return code %d:\n%s\n\n%s\n\n", $command, $return_code, $stdout, $stderr), E_RECOVERABLE_ERROR);
+        throw new GitRuntimeException(sprintf("Invocation of Git command '%s' failed with return code %d:\n%s\n\n%s\n\n", $command, $return_code, $stdout, $stderr), E_RECOVERABLE_ERROR);
       }
 
       return $stdout;

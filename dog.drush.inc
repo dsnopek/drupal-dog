@@ -171,7 +171,7 @@ function _dog_verify_git() {
   try {
     $version = substr(trim(_dog_git_invoke('version')), 12);
   }
-  catch (Exception $e) {
+  catch (Dog\Exception\GitRuntimeException $e) {
     $git_path = drush_get_option('git-path', 'git');
     if ($git_path === 'git') {
       drush_set_error('DRUSH_DOG_NO_GIT_BINARY', dt("No valid Git binary could be found on the PATH."), 'error');
@@ -249,7 +249,7 @@ function _dog_git_invoke($command, $cwd = NULL, $repository_path = NULL, $fail_s
     $return_code = proc_close($process);
 
     if ($return_code != 0 && !$fail_safe) {
-      throw new \Exception("Invocation of Git command '" . $command . "' failed with return code " . $return_code .": \n" . $stdout . $stderr);
+      throw new Dog\Exception\GitRuntimeException("Invocation of Git command '" . $command . "' failed with return code " . $return_code .": \n" . $stdout . $stderr);
     }
 
     return $stdout;
