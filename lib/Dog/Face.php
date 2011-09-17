@@ -194,6 +194,15 @@ class Face {
     }
   }
 
+  /**
+   * Shortcut method to retrieve the object representing the main core repository.
+   *
+   * @return Dog\Repository\Core
+   */
+  public function getCoreRepository() {
+
+  }
+
   public function getRepository($path) {
     return isset($this->repositories[$path]) ? $this->repositories[$path] : FALSE;
   }

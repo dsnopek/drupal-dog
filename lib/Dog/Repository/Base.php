@@ -15,7 +15,6 @@ abstract class Base implements RepositoryInterface {
    */
   protected $config;
 
-
   /**
    *
    * @var Dog\Face
@@ -28,7 +27,10 @@ abstract class Base implements RepositoryInterface {
   }
 
   public function create() {
-    $path = $this->config->getPath;
+    if (!$this->config->ensure()) {
+      drush_set_error('DRUSH_DOG_MISSING_DATA', dt("Repository configuration object is missing some vital data."));
+      return FALSE;
+    }
   }
 
   public function getCurrentBranch($name_only = TRUE) {

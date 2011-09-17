@@ -101,4 +101,10 @@ interface RepositoryInterface {
    * to the repository on disk.
    */
   public function __toString();
+
+  //   public function ensureClean($ignore_untracked = FALSE);
+
+  //   public function stage($path);
+
+  //   public function commit();
 }
