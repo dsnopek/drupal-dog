@@ -9,7 +9,7 @@ use Dog\Face;
  * Interface defining general behaviors for all Dog repositories, regardless of
  * type.
  */
-interface IRepository {
+interface RepositoryInterface {
 
   /**
    * Create a new Git repository-handling object.
@@ -27,12 +27,12 @@ interface IRepository {
    * the config object should contain the desired values to be used in creating
    * and any subsequent setup of the repository.
    *
-   * This usage pattern, where Dog\Config\IConfig objects are populated from
+   * This usage pattern, where Dog\Config\ConfigInterface objects are populated from
    * the sled in the event of an existing resource, or with desired values in
    * the event of a new resource, is the expected pattern throughout dog.
    *
    * @param Dog\Config\RepositoryConfig $config
-   *   A Dog\Config\Repository object, which implements Dog\Config\IConfig, and
+   *   A Dog\Config\Repository object, which implements Dog\Config\ConfigInterface, and
    *   contains all vital configuration information for this repository.
    *
    * @param Dog\Face $face

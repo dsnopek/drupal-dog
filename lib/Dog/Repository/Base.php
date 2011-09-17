@@ -5,12 +5,12 @@ namespace Dog\Repository;
 use Dog\Config\RepositoryConfig;
 use Dog\Face;
 
-abstract class Base implements IRepository {
+abstract class Base implements RepositoryInterface {
 
   /**
    * An instance of a repository configuration object. This object is used to
    *
-   * @var Dog\Config\IRepository
+   * @var Dog\Config\RepositoryInterface
    */
   protected $config;
 

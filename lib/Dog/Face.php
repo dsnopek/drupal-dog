@@ -2,7 +2,7 @@
 
 namespace Dog;
 
-use Dog\Repository\IRepository;
+use Dog\Repository\RepositoryInterface;
 use Dog\Sled;
 use Dog\Exception\BadDog;
 
@@ -198,7 +198,7 @@ class Face {
     return isset($this->repositories[$path]) ? $this->repositories[$path] : FALSE;
   }
 
-  public function attachNewRepository(IRepository $repository) {
+  public function attachNewRepository(RepositoryInterface $repository) {
     $sled = $this->getSled();
 
     $sled->attachNewRepository($repository);

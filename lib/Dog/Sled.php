@@ -2,7 +2,7 @@
 
 namespace Dog;
 
-use Dog\Repository\IRepository;
+use Dog\Repository\RepositoryInterface;
 use Dog\Exception\ConcurrencyException;
 use Dog\Config\RepositoryConfig;
 
@@ -147,7 +147,7 @@ class Sled {
     return $this->buildTarget;
   }
 
-  public function attachNewRepository(IRepository $repository) {
+  public function attachNewRepository(RepositoryInterface $repository) {
     $config = $repository->getConfig();
     $type = get_class($repository);
     $config['classhandler'] = $type;

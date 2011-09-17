@@ -3,12 +3,12 @@
 namespace Dog\Config;
 
 /**
- * A configuration object that is used by Dog\Repository\IRepository objects.
+ * A configuration object that is used by Dog\Repository\RepositoryInterface objects.
  *
  */
 use Dog\Exception\MissingConfigurationException;
 
-class RepositoryConfig implements IConfig {
+class RepositoryConfig implements ConfigInterface {
   protected $conf = array();
 
 //  /**

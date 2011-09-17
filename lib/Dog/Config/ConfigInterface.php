@@ -5,7 +5,7 @@ namespace Dog\Config;
 /**
  * Interface governing all sleddable configuration objects.
  */
-interface IConfig extends \ArrayAccess {
+interface ConfigInterface extends \ArrayAccess {
 
   /**
    * Ensure that at least the basic values required for this configuration
