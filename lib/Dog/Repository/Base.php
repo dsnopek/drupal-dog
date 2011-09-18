@@ -120,12 +120,19 @@ abstract class Base implements RepositoryInterface {
   }
 
   public function commitAll($message, $include_untracked = FALSE) {
+    // TODO this logic hasn't been directly tested yet
+    $cmd = 'ls-files -dm';
     if ($include_untracked) {
-      $this->gitPassthru('add -A .');
+      $cmd .= 'o';
     }
 
-    // TODO will this do the right string escaping? ugh
-    $this->gitPassthru('commit -m"' . escapeshellarg($message) . '"');
+    $cmd .= 'z --exclude-standard | git update-index -z --add --remove --stdin';
+    $this->gitPassthru($cmd);
+
+    $tree = $this->gitPassthru('write-tree');
+
+    $commit = $this->gitPassthru("commit-tree $tree -p HEAD", NULL, FALSE, NULL, $message);
+    $this->gitPassthru('update-ref -m ' . escapeshellarg('dog commit: ' . substr($message, 0, 70)) . " HEAD $commit");
   }
 
   public function __toString() {
