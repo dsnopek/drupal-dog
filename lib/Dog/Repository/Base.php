@@ -43,7 +43,7 @@ abstract class Base implements RepositoryInterface {
     }
   }
 
-  public function gitPassthru($command, $cwd = NULL, $fail_safe = FALSE, $env = NULL) {
+  public function gitPassthru($command, $cwd = NULL, $fail_safe = FALSE, $env = NULL, $stdin = NULL) {
     static $env_source;
 
     // Inherit env using the sanest possible settings
@@ -87,6 +87,10 @@ abstract class Base implements RepositoryInterface {
       2 => array('pipe', 'w'),
     );
 
+    if (NULL !== $stdin) {
+      $descriptor_spec[0] = array('pipe', 'r');
+    }
+
     // proc_open() and $pipes var preclude using drush_op() so we simulate it.
     if (drush_get_context('DRUSH_VERBOSE') || drush_get_context('DRUSH_SIMULATE')) {
        drush_print("Calling proc_open(git $command)");
@@ -95,6 +99,10 @@ abstract class Base implements RepositoryInterface {
     if (!drush_get_context('DRUSH_SIMULATE')) {
       $process = proc_open("git $command", $descriptor_spec, $pipes, $cwd, $env);
       if (is_resource($process)) {
+        if (NULL !== $stdin) {
+          fwrite($pipes[0], $stdin);
+          fclose($pipes[0]);
+        }
         $stdout = stream_get_contents($pipes[1]);
         fclose($pipes[1]);
         $stderr = stream_get_contents($pipes[2]);

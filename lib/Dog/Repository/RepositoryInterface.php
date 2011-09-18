@@ -68,7 +68,7 @@ interface RepositoryInterface {
    * This command respects drush's various output & execution control options.
    * Or at least it should - if it doesn't, file a bug :)
    */
-  public function gitPassthru($command, $cwd = NULL, $fail_safe = FALSE, $env = NULL);
+  public function gitPassthru($command, $cwd = NULL, $fail_safe = FALSE, $env = NULL, $stdin = NULL);
 
   /**
    * Return the Dog\Config\RepositoryConfig that controls this repository.
