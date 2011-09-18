@@ -52,12 +52,9 @@ class Core extends Base {
 
     drush_log(dt("Successfully initialized a new dog instance in %worktree", array('%worktree' => $this->config['worktree']), 'success'));
 
-    // Create the appropriate local branch based on the requested start point
-    $localbranch = drush_get_option('branch', 'master');
-
     $old = substr(trim($this->gitPassthru('symbolic-ref HEAD', $this->config['worktree'])), 11);
 
-    $this->gitPassthru('checkout -b ' . drush_escapeshellarg($localbranch) . ' ' . drush_escapeshellarg($this->config['upstream_ref']), $this->config['worktree']);
+    $this->gitPassthru('checkout -b ' . drush_escapeshellarg($this->config['localbranch']) . ' ' . drush_escapeshellarg($this->config['upstream_ref']), $this->config['worktree']);
     $this->gitPassthru('branch -D ' . $old, $this->config['worktree']);
 
     // Set up the collab remote, if the URI for it exists
