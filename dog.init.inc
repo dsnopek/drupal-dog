@@ -55,12 +55,10 @@ function drush_dog_init_validate($target = '') {
   $upstream_ref = drush_get_option('upstream-ref');
   if (empty($upstream_ref)) {
     if (strpos($upstream, 'drupal') === 0) {
-      // Force inclusion of download.pm.inc. Ugh.
-      drush_include(DRUSH_BASE_PATH . '/commands/pm', 'download.pm');
+      drush_include_engine('release_info', 'updatexml');
       $version = pm_parse_project_version(array($upstream));
       $version = reset($version);
-      $xml = _drush_pm_get_release_history_xml($version);
-      $release = _pm_download_parse_release($version, $xml);
+      $release = release_info_fetch($version);
       $upstream_ref = $release['tag'];
       // We need to set the upstream to the proper drupal git url.
       $upstream = 'git://git.drupal.org/project/drupal.git';

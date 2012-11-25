@@ -373,7 +373,7 @@ function drush_dog_dl() {
     return drush_set_error(DRUSH_PM_REQUESTED_PROJECT_NOT_FOUND, dt('You must specify at least one project to download.'));
   }
 
-  drush_invoke_args('pm-download', $args);
+  drush_invoke('pm-download', $args);
 }
 
 function drush_dog_vet() {

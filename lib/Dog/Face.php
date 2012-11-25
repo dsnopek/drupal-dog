@@ -136,7 +136,7 @@ class Face {
       $found = FALSE;
       $path = $this->suggestedPath;
       while (FALSE === $found && '/' !== $path) {
-        if (file_exists($path . '/sled.xml')) {
+        if (file_exists($path . '/.dog/sled.xml')) {
           $found = TRUE;
           $this->path = $path;
         }
